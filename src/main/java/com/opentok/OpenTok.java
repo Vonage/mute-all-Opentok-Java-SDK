@@ -643,6 +643,48 @@ public class OpenTok {
         }
     }
 
+    /**
+     * mutes a client from an OpenTok session
+     * <p>
+     * Use this API to forcibly mute a stream of a session.
+     *
+     * @param sessionId The session ID of the connection
+     * @param  streamId The stream ID to mute
+     */
+    public void forceMute(String sessionId, String streamId) throws OpenTokException , InvalidArgumentException, RequestException {
+        if (sessionId == null || sessionId.isEmpty() || streamId == null || streamId.isEmpty()) {
+            throw new InvalidArgumentException("Session or Connection string null or empty");
+        }
+        try {
+            client.forceMute(sessionId, streamId);
+
+        } catch (Exception e)
+        {
+            throw e;
+        }
+    }
+
+    /**
+     * mutes all streams from an OpenTok session
+     * <p>
+     * Use this API to forcibly mute a stream of a session.
+     *
+     * @param sessionId The session ID of the connection
+     * @param  excludedSteamIds The stream ID to not mute
+     */
+    public void forceMuteAll(String sessionId, String[] excludedSteamIds) throws OpenTokException , InvalidArgumentException, RequestException {
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new InvalidArgumentException("Session string null or empty");
+        }
+        try {
+            client.forceMuteAll(sessionId, excludedSteamIds);
+
+        } catch (Exception e)
+        {
+            throw e;
+        }
+    }
+
 
     /**
      * Gets an {@link Stream} object for the given sessionId and streamId.

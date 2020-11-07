@@ -32,12 +32,14 @@ import org.asynchttpclient.filter.FilterContext;
 import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.proxy.ProxyServer;
+import org.jose4j.json.internal.json_simple.JSONArray;
 
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -666,6 +668,65 @@ public class HttpClient extends DefaultAsyncHttpClient {
 
         return responseString;
     }
+
+    public String forceMute(String sessionId, String streamId) throws   OpenTokException , RequestException {
+        String responseString = null;
+        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream/"+ streamId + "/mute" ;
+        Future<Response> request = this.preparePost(url).setHeader("Content-Type", "application/json").execute();
+
+        try {
+            Response response = request.get();
+            switch (response.getStatusCode()) {
+                case 204:
+                    responseString = response.getResponseBody();
+                    break;
+                case 400:
+                    throw new RequestException("Could not force mute. One of the arguments — sessionId or streamId — is invalid.");
+                case 403:
+                    throw new RequestException("Could not force mute. You are not authorized to forceMute, check your authentication credentials.");
+                case 404:
+                    throw new RequestException("Could not force mute. The client specified by the connectionId property is not connected to the session.");
+                default:
+                    throw new RequestException("Could not force mute. The server response was invalid." +
+                            " response code: " + response.getStatusCode());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RequestException("Could not force mute", e);
+        }
+
+        return responseString;
+    }
+
+    public String forceMuteAll(String sessionId, String[] excludedSteamIds) throws   OpenTokException , RequestException {
+        String responseString = null;
+        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId + "/mute" ;
+        JSONArray jArray = new JSONArray(Arrays.asList(excludedSteamIds));
+        String body = jArray.toJSONString();
+        Future<Response> request = this.preparePost(url).setBody(body).setHeader("Content-Type", "application/json").execute();
+
+        try {
+            Response response = request.get();
+            switch (response.getStatusCode()) {
+                case 204:
+                    responseString = response.getResponseBody();
+                    break;
+                case 400:
+                    throw new RequestException("Could not force mute all. One of the arguments — sessionId — is invalid.");
+                case 403:
+                    throw new RequestException("Could not force mute all. You are not authorized to forceMuteAll, check your authentication credentials.");
+                case 404:
+                    throw new RequestException("Could not force mute all. The client specified by the connectionId property is not connected to the session.");
+                default:
+                    throw new RequestException("Could not force mute all. The server response was invalid." +
+                            " response code: " + response.getStatusCode());
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RequestException("Could not force mute all", e);
+        }
+
+        return responseString;
+    }
+
     public String sipDial(String sessionId, String token, SipProperties props) throws OpenTokException {
         String responseString = null;
         String url = this.apiUrl + "/v2/project/" + this.apiKey + "/dial";

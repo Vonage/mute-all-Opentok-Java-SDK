@@ -1947,6 +1947,41 @@ public class OpenTokTest {
         Helpers.verifyUserAgent();
     }
 
+    //Force Mute tests are commented out because convention here is to test with server 
+    //TODO: recheck tests after end point is added
+
+    // @Test
+    // public void testforceMute() throws OpenTokException {
+    //     String sessionId = "SESSIONID";
+    //     String streamId = "STREAMID";
+    //     String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/stream/" + streamId +"/mute" ;
+    //     stubFor(post(urlEqualTo(path))
+    //             .willReturn(aResponse()
+    //                     .withStatus(204)
+    //                     .withHeader("Content-Type", "application/json")));
+    //     sdk.forceMute(sessionId,streamId);
+    //     verify(deleteRequestedFor(urlMatching(path)));
+    //     assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
+    //             findAll(deleteRequestedFor(urlMatching(path)))));
+    //     Helpers.verifyUserAgent();
+    // }
+
+    // @Test
+    // public void testforceMuteAll() throws OpenTokException {
+    //     String sessionId = "SESSIONID";
+    //     String[] excludedStreamIds = {"sdfs","sdfds"};
+    //     String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/mute" ;
+    //     stubFor(post(urlEqualTo(path))
+    //             .willReturn(aResponse()
+    //                     .withStatus(204)
+    //                     .withHeader("Content-Type", "application/json")));
+    //     sdk.forceMuteAll(sessionId,excludedStreamIds);
+    //     verify(deleteRequestedFor(urlMatching(path)));
+    //     assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
+    //             findAll(deleteRequestedFor(urlMatching(path)))));
+    //     Helpers.verifyUserAgent();
+    // }
+
     @Test
     public void testCreateSessionWithProxy() throws OpenTokException, UnknownHostException {
         WireMockConfiguration proxyConfig = WireMockConfiguration.wireMockConfig();
