@@ -1983,6 +1983,21 @@ public class OpenTokTest {
     }
 
     @Test
+    public void testforceMuteAllNoExcluded() throws OpenTokException {
+        String sessionId = "SESSIONID";
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/mute" ;
+        stubFor(post(urlEqualTo(path))
+                .willReturn(aResponse()
+                        .withStatus(204)
+                        .withHeader("Content-Type", "application/json")));
+        sdk.forceMuteAll(sessionId);
+        verify(postRequestedFor(urlMatching(path)));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
+                findAll(deleteRequestedFor(urlMatching(path)))));
+        Helpers.verifyUserAgent();
+    }
+
+    @Test
     public void testCreateSessionWithProxy() throws OpenTokException, UnknownHostException {
         WireMockConfiguration proxyConfig = WireMockConfiguration.wireMockConfig();
         proxyConfig.dynamicPort();

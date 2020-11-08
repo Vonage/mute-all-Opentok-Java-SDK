@@ -646,7 +646,7 @@ public class OpenTok {
     /**
      * mutes a client from an OpenTok session
      * <p>
-     * Use this API to forcibly mute a stream of a session.
+     * Use this API to force mute a stream of a session.
      *
      * @param sessionId The session ID of the connection
      * @param  streamId The stream ID to mute
@@ -655,36 +655,37 @@ public class OpenTok {
         if (sessionId == null || sessionId.isEmpty() || streamId == null || streamId.isEmpty()) {
             throw new InvalidArgumentException("Session or Connection string null or empty");
         }
-        try {
-            client.forceMute(sessionId, streamId);
-
-        } catch (Exception e)
-        {
-            throw e;
-        }
+        client.forceMute(sessionId, streamId, null);
     }
 
     /**
      * mutes all streams from an OpenTok session
      * <p>
-     * Use this API to forcibly mute a stream of a session.
+     * Use this API to force mute all streams of a session.
      *
      * @param sessionId The session ID of the connection
-     * @param  excludedSteamIds The stream ID to not mute
+     * @param  excludedStreamIds The stream IDs to exclude from mute
      */
-    public void forceMuteAll(String sessionId, String[] excludedSteamIds) throws OpenTokException , InvalidArgumentException, RequestException {
+    public void forceMuteAll(String sessionId, String[] excludedStreamIds) throws OpenTokException , InvalidArgumentException, RequestException {
         if (sessionId == null || sessionId.isEmpty()) {
             throw new InvalidArgumentException("Session string null or empty");
         }
-        try {
-            client.forceMuteAll(sessionId, excludedSteamIds);
-
-        } catch (Exception e)
-        {
-            throw e;
-        }
+        client.forceMute(sessionId, null, excludedStreamIds);
     }
 
+     /**
+     * mutes all streams from an OpenTok session
+     * <p>
+     * Use this API to force mute all streams of a session.
+     *
+     * @param sessionId The session ID of the connection
+     */
+    public void forceMuteAll(String sessionId) throws OpenTokException , InvalidArgumentException, RequestException {
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new InvalidArgumentException("Session string null or empty");
+        }
+        client.forceMute(sessionId, null, null);
+    }
 
     /**
      * Gets an {@link Stream} object for the given sessionId and streamId.

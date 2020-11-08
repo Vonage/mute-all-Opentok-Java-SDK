@@ -669,10 +669,25 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String forceMute(String sessionId, String streamId) throws   OpenTokException , RequestException {
+    public String forceMute(String sessionId, String streamId, String[] excludedStreamIds) throws   OpenTokException , RequestException {
         String responseString = null;
-        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream/"+ streamId + "/mute" ;
-        Future<Response> request = this.preparePost(url).setHeader("Content-Type", "application/json").execute();
+        String body= "";
+        if(streamId!=null && excludedStreamIds != null)
+        {
+            throw new RequestException("can't have bouth streamId and excludedIds");
+        }
+        if(excludedStreamIds!= null)
+        {
+            JSONArray jArray = new JSONArray(Arrays.asList(excludedStreamIds));
+            body = jArray.toJSONString();
+        }
+        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId;
+        if(streamId != null)
+        { 
+            url += "/stream/"+ streamId;
+        }
+        url += "/mute" ;
+        Future<Response> request = this.preparePost(url).setBody(body).setHeader("Content-Type", "application/json").execute();
 
         try {
             Response response = request.get();
@@ -692,36 +707,6 @@ public class HttpClient extends DefaultAsyncHttpClient {
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not force mute", e);
-        }
-
-        return responseString;
-    }
-
-    public String forceMuteAll(String sessionId, String[] excludedSteamIds) throws   OpenTokException , RequestException {
-        String responseString = null;
-        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId + "/mute" ;
-        JSONArray jArray = new JSONArray(Arrays.asList(excludedSteamIds));
-        String body = jArray.toJSONString();
-        Future<Response> request = this.preparePost(url).setBody(body).setHeader("Content-Type", "application/json").execute();
-
-        try {
-            Response response = request.get();
-            switch (response.getStatusCode()) {
-                case 204:
-                    responseString = response.getResponseBody();
-                    break;
-                case 400:
-                    throw new RequestException("Could not force mute all. One of the arguments — sessionId — is invalid.");
-                case 403:
-                    throw new RequestException("Could not force mute all. You are not authorized to forceMuteAll, check your authentication credentials.");
-                case 404:
-                    throw new RequestException("Could not force mute all. The client specified by the connectionId property is not connected to the session.");
-                default:
-                    throw new RequestException("Could not force mute all. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RequestException("Could not force mute all", e);
         }
 
         return responseString;
