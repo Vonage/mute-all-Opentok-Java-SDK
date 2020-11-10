@@ -649,9 +649,11 @@ public class OpenTok {
      * Use this API to force mute a stream of a session.
      *
      * @param sessionId The session ID of the connection
-     * @param  streamId The stream ID to mute
+     * @param streamId  The stream ID to mute
+     * @throws IOException
      */
-    public void forceMute(String sessionId, String streamId) throws OpenTokException , InvalidArgumentException, RequestException {
+    public void forceMute(String sessionId, String streamId)
+            throws OpenTokException, InvalidArgumentException, RequestException, IOException {
         if (sessionId == null || sessionId.isEmpty() || streamId == null || streamId.isEmpty()) {
             throw new InvalidArgumentException("Session or Connection string null or empty");
         }
@@ -663,10 +665,12 @@ public class OpenTok {
      * <p>
      * Use this API to force mute all streams of a session.
      *
-     * @param sessionId The session ID of the connection
-     * @param  excludedStreamIds The stream IDs to exclude from mute
+     * @param sessionId         The session ID of the connection
+     * @param excludedStreamIds The stream IDs to exclude from mute
+     * @throws IOException
      */
-    public void forceMuteAll(String sessionId, String[] excludedStreamIds) throws OpenTokException , InvalidArgumentException, RequestException {
+    public void forceMuteAll(String sessionId, String[] excludedStreamIds)
+            throws OpenTokException, InvalidArgumentException, RequestException, IOException {
         if (sessionId == null || sessionId.isEmpty()) {
             throw new InvalidArgumentException("Session string null or empty");
         }
@@ -674,13 +678,15 @@ public class OpenTok {
     }
 
      /**
-     * mutes all streams from an OpenTok session
-     * <p>
-     * Use this API to force mute all streams of a session.
-     *
-     * @param sessionId The session ID of the connection
-     */
-    public void forceMuteAll(String sessionId) throws OpenTokException , InvalidArgumentException, RequestException {
+      * mutes all streams from an OpenTok session
+      * <p>
+      * Use this API to force mute all streams of a session.
+      *
+      * @param sessionId The session ID of the connection
+      * @throws IOException
+      */
+     public void forceMuteAll(String sessionId)
+             throws OpenTokException, InvalidArgumentException, RequestException, IOException {
         if (sessionId == null || sessionId.isEmpty()) {
             throw new InvalidArgumentException("Session string null or empty");
         }

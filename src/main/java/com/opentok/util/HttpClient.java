@@ -33,8 +33,11 @@ import org.asynchttpclient.filter.FilterException;
 import org.asynchttpclient.filter.RequestFilter;
 import org.asynchttpclient.proxy.ProxyServer;
 import org.jose4j.json.internal.json_simple.JSONArray;
+import org.jose4j.json.internal.json_simple.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
@@ -50,7 +53,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class HttpClient extends DefaultAsyncHttpClient {
-    
+
     private final String apiUrl;
     private final int apiKey;
 
@@ -71,8 +74,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
             }
         }
 
-        Future<Response> request = this.preparePost(this.apiUrl + "/session/create")
-                .setFormParams(paramsWithList)
+        Future<Response> request = this.preparePost(this.apiUrl + "/session/create").setFormParams(paramsWithList)
                 .addHeader("Accept", "application/json") // XML version is deprecated
                 .execute();
 
@@ -83,8 +85,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 default:
-                    throw new RequestException("Could not create an OpenTok Session. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not create an OpenTok Session. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not create an OpenTok Session", e);
@@ -92,11 +94,13 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String signal(String sessionId, String connectionId, SignalProperties properties) throws   OpenTokException , RequestException {
+    public String signal(String sessionId, String connectionId, SignalProperties properties)
+            throws OpenTokException, RequestException {
         String responseString = null;
         String requestBody = null;
 
-        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId + (connectionId != null && connectionId.length() > 0 ? "/connection/"+ connectionId : "") +  "/signal";
+        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId
+                + (connectionId != null && connectionId.length() > 0 ? "/connection/" + connectionId : "") + "/signal";
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         ObjectNode requestJson = nodeFactory.objectNode();
 
@@ -108,10 +112,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
         } catch (JsonProcessingException e) {
             throw new OpenTokException("Could not send a signal. The JSON body encoding failed.", e);
         }
-        Future<Response> request = this.preparePost(url)
-                .setBody(requestBody)
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.preparePost(url).setBody(requestBody)
+                .setHeader("Content-Type", "application/json").execute();
 
         try {
             Response response = request.get();
@@ -124,12 +126,14 @@ public class HttpClient extends DefaultAsyncHttpClient {
                 case 403:
                     throw new RequestException("Could not send a signal. The request was not authorized.");
                 case 404:
-                    throw new RequestException("Could not send a signal. The client specified by the connectionId property is not connected to the session.");
+                    throw new RequestException(
+                            "Could not send a signal. The client specified by the connectionId property is not connected to the session.");
                 case 413:
-                    throw new RequestException("Could not send a signal. The type string exceeds the maximum length (128 bytes), or the data string exceeds the maximum size (8 kB)");
+                    throw new RequestException(
+                            "Could not send a signal. The type string exceeds the maximum length (128 bytes), or the data string exceeds the maximum size (8 kB)");
                 default:
-                    throw new RequestException("Could not send a signal " +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException(
+                            "Could not send a signal " + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not send a signal.", e);
@@ -149,15 +153,15 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not get an OpenTok Archive. The archiveId was invalid. " +
-                            "archiveId: " + archiveId);
+                    throw new RequestException("Could not get an OpenTok Archive. The archiveId was invalid. "
+                            + "archiveId: " + archiveId);
                 case 403:
                     throw new RequestException("Could not get an OpenTok Archive. The request was not authorized.");
                 case 500:
                     throw new RequestException("Could not get an OpenTok Archive. A server error occurred.");
                 default:
-                    throw new RequestException("Could not get an OpenTok Archive. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not get an OpenTok Archive. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not  get an OpenTok Archive", e);
@@ -167,8 +171,9 @@ public class HttpClient extends DefaultAsyncHttpClient {
     }
 
     public String getArchives(String sessionId, int offset, int count) throws OpenTokException {
-        if(offset < 0 || count < 0 || count > 1000)  {
-            throw new InvalidArgumentException("Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
+        if (offset < 0 || count < 0 || count > 1000) {
+            throw new InvalidArgumentException(
+                    "Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
         }
 
         String responseString;
@@ -182,7 +187,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
                 url += ("count=" + Integer.toString(count));
             }
         }
-        if(sessionId != null && !sessionId.isEmpty())  {
+        if (sessionId != null && !sessionId.isEmpty()) {
             url += (url.contains("?") ? "&" : "?") + "sessionId=" + sessionId;
         }
 
@@ -199,8 +204,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
                 case 500:
                     throw new RequestException("Could not get OpenTok Archives. A server error occurred.");
                 default:
-                    throw new RequestException("Could not get OpenTok Archives. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not get OpenTok Archives. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not get OpenTok Archives", e);
@@ -209,8 +214,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String startArchive(String sessionId, ArchiveProperties properties)
-            throws OpenTokException {
+    public String startArchive(String sessionId, ArchiveProperties properties) throws OpenTokException {
         String responseString = null;
         String requestBody = null;
         // TODO: maybe use a StringBuilder?
@@ -222,7 +226,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
         requestJson.put("hasVideo", properties.hasVideo());
         requestJson.put("hasAudio", properties.hasAudio());
         requestJson.put("outputMode", properties.outputMode().toString());
-        if(properties.layout() != null) {
+        if (properties.layout() != null) {
             ObjectNode layout = requestJson.putObject("layout");
             layout.put("type", properties.layout().getType().toString());
             layout.put("stylesheet", properties.layout().getStylesheet());
@@ -238,10 +242,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
         } catch (JsonProcessingException e) {
             throw new OpenTokException("Could not start an OpenTok Archive. The JSON body encoding failed.", e);
         }
-        Future<Response> request = this.preparePost(url)
-                .setBody(requestBody)
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.preparePost(url).setBody(requestBody)
+                .setHeader("Content-Type", "application/json").execute();
 
         try {
             Response response = request.get();
@@ -250,20 +252,21 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not start an OpenTok Archive. A bad request, check input archive properties like resolution etc.");
+                    throw new RequestException(
+                            "Could not start an OpenTok Archive. A bad request, check input archive properties like resolution etc.");
                 case 403:
                     throw new RequestException("Could not start an OpenTok Archive. The request was not authorized.");
                 case 404:
-                    throw new RequestException("Could not start an OpenTok Archive. The sessionId does not exist. " +
-                            "sessionId = " + sessionId);
+                    throw new RequestException("Could not start an OpenTok Archive. The sessionId does not exist. "
+                            + "sessionId = " + sessionId);
                 case 409:
-                    throw new RequestException("Could not start an OpenTok Archive. The session is either " +
-                            "peer-to-peer or already recording. sessionId = " + sessionId);
+                    throw new RequestException("Could not start an OpenTok Archive. The session is either "
+                            + "peer-to-peer or already recording. sessionId = " + sessionId);
                 case 500:
                     throw new RequestException("Could not start an OpenTok Archive. A server error occurred.");
                 default:
-                    throw new RequestException("Could not start an OpenTok Archive. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not start an OpenTok Archive. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not start an OpenTok Archive.", e);
@@ -284,22 +287,24 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    // NOTE: the REST api spec talks about sessionId and action, both of which aren't required.
-                    //       see: https://github.com/opentok/OpenTok-2.0-archiving-samples/blob/master/REST-API.md#stop_archive
+                    // NOTE: the REST api spec talks about sessionId and action, both of which
+                    // aren't required.
+                    // see:
+                    // https://github.com/opentok/OpenTok-2.0-archiving-samples/blob/master/REST-API.md#stop_archive
                     throw new RequestException("Could not stop an OpenTok Archive.");
                 case 403:
                     throw new RequestException("Could not stop an OpenTok Archive. The request was not authorized.");
                 case 404:
-                    throw new RequestException("Could not stop an OpenTok Archive. The archiveId does not exist. " +
-                            "archiveId = " + archiveId);
+                    throw new RequestException("Could not stop an OpenTok Archive. The archiveId does not exist. "
+                            + "archiveId = " + archiveId);
                 case 409:
-                    throw new RequestException("Could not stop an OpenTok Archive. The archive is not being recorded. " +
-                            "archiveId = " + archiveId);
+                    throw new RequestException("Could not stop an OpenTok Archive. The archive is not being recorded. "
+                            + "archiveId = " + archiveId);
                 case 500:
                     throw new RequestException("Could not stop an OpenTok Archive. A server error occurred.");
                 default:
-                    throw new RequestException("Could not stop an OpenTok Archive. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not stop an OpenTok Archive. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not stop an OpenTok Archive.", e);
@@ -321,13 +326,13 @@ public class HttpClient extends DefaultAsyncHttpClient {
                 case 403:
                     throw new RequestException("Could not delete an OpenTok Archive. The request was not authorized.");
                 case 409:
-                    throw new RequestException("Could not delete an OpenTok Archive. The status was not \"uploaded\"," +
-                            " \"available\", or \"deleted\". archiveId = " + archiveId);
+                    throw new RequestException("Could not delete an OpenTok Archive. The status was not \"uploaded\","
+                            + " \"available\", or \"deleted\". archiveId = " + archiveId);
                 case 500:
                     throw new RequestException("Could not delete an OpenTok Archive. A server error occurred.");
                 default:
-                    throw new RequestException("Could not get an OpenTok Archive. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not get an OpenTok Archive. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not delete an OpenTok Archive. archiveId = " + archiveId, e);
@@ -337,17 +342,20 @@ public class HttpClient extends DefaultAsyncHttpClient {
     }
 
     public String setArchiveLayout(String archiveId, ArchiveProperties properties) throws OpenTokException {
-        if(properties.layout() == null) {
-            throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+        if (properties.layout() == null) {
+            throw new RequestException(
+                    "Could not set the layout. Either an invalid JSON or an invalid layout options.");
         }
         String type = properties.layout().getType().toString();
         String stylesheet = properties.layout().getStylesheet();
-        if(StringUtils.isEmpty(type)) {
-            throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+        if (StringUtils.isEmpty(type)) {
+            throw new RequestException(
+                    "Could not set the layout. Either an invalid JSON or an invalid layout options.");
         }
-        if ((type.equals(ArchiveLayout.Type.CUSTOM.toString()) && StringUtils.isEmpty(stylesheet)) ||
-            (!type.equals(ArchiveLayout.Type.CUSTOM.toString()) && !StringUtils.isEmpty(stylesheet))) {
-            throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+        if ((type.equals(ArchiveLayout.Type.CUSTOM.toString()) && StringUtils.isEmpty(stylesheet))
+                || (!type.equals(ArchiveLayout.Type.CUSTOM.toString()) && !StringUtils.isEmpty(stylesheet))) {
+            throw new RequestException(
+                    "Could not set the layout. Either an invalid JSON or an invalid layout options.");
         }
         String responseString = null;
         String requestBody = null;
@@ -355,7 +363,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         ObjectNode requestJson = nodeFactory.objectNode();
         requestJson.put("type", type);
-        if(type.equals(ArchiveLayout.Type.CUSTOM.toString())) {
+        if (type.equals(ArchiveLayout.Type.CUSTOM.toString())) {
             requestJson.put("stylesheet", properties.layout().getStylesheet());
         }
 
@@ -364,10 +372,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
         } catch (JsonProcessingException e) {
             throw new OpenTokException("Could not set the layout. The JSON body encoding failed.", e);
         }
-        Future<Response> request = this.preparePut(url)
-                .setBody(requestBody)
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.preparePut(url).setBody(requestBody)
+                .setHeader("Content-Type", "application/json").execute();
         try {
             Response response = request.get();
             switch (response.getStatusCode()) {
@@ -375,14 +381,15 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+                    throw new RequestException(
+                            "Could not set the layout. Either an invalid JSON or an invalid layout options.");
                 case 403:
                     throw new RequestException("Could not set the layout. The request was not authorized.");
                 case 500:
                     throw new RequestException("Could not set the layout. A server error occurred.");
                 default:
-                    throw new RequestException("Could not set the layout. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not set the layout. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not set the layout, archiveId = " + archiveId, e);
@@ -397,13 +404,14 @@ public class HttpClient extends DefaultAsyncHttpClient {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             JsonFactory factory = new JsonFactory();
-            //Using JsonGenerator as layoutClassList values must be in double quotes and ObjectMapper
+            // Using JsonGenerator as layoutClassList values must be in double quotes and
+            // ObjectMapper
             // adds extra escape characters
             JsonGenerator jGenerator = factory.createGenerator(outputStream);
             jGenerator.writeStartObject();
             jGenerator.writeArrayFieldStart("items");
 
-            for(StreamProperties stream : properties.getStreamList()) {
+            for (StreamProperties stream : properties.getStreamList()) {
                 jGenerator.writeStartObject();
                 jGenerator.writeFieldName("id");
                 jGenerator.writeString(stream.id());
@@ -411,7 +419,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
                 List<String> stringList = stream.getLayoutClassList();
                 StringJoiner sj = new StringJoiner(",");
                 stringList.stream().forEach(e -> sj.add(doubleQuotes + e + doubleQuotes));
-                jGenerator.writeRawValue("["+ sj.toString() + "]");
+                jGenerator.writeRawValue("[" + sj.toString() + "]");
                 jGenerator.writeEndObject();
             }
 
@@ -423,10 +431,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
             throw new OpenTokException("Could not set the layout. The JSON body encoding failed.", e);
         }
 
-        Future<Response> request = this.preparePut(url)
-                .setBody(outputStream.toString())
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.preparePut(url).setBody(outputStream.toString())
+                .setHeader("Content-Type", "application/json").execute();
         try {
             Response response = request.get();
             switch (response.getStatusCode()) {
@@ -434,14 +440,15 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+                    throw new RequestException(
+                            "Could not set the layout. Either an invalid JSON or an invalid layout options.");
                 case 403:
                     throw new RequestException("Could not set the layout. The request was not authorized.");
                 case 500:
                     throw new RequestException("Could not set the layout. A server error occurred.");
                 default:
-                    throw new RequestException("Could not set the layout. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not set the layout. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not delete an OpenTok Archive, sessionId = " + sessionId, e);
@@ -449,21 +456,20 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String startBroadcast(String sessionId, BroadcastProperties properties)
-            throws OpenTokException {
+    public String startBroadcast(String sessionId, BroadcastProperties properties) throws OpenTokException {
         String responseString = null;
         String requestBody = null;
-       
+
         String url = this.apiUrl + "/v2/project/" + this.apiKey + "/broadcast";
 
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         ObjectNode requestJson = nodeFactory.objectNode();
         requestJson.put("sessionId", sessionId);
-        if(properties.layout() != null) {
+        if (properties.layout() != null) {
             ObjectNode layout = requestJson.putObject("layout");
             String type = properties.layout().getType().toString();
             layout.put("type", type);
-            if(type.equals(BroadcastLayout.Type.CUSTOM.toString())) {
+            if (type.equals(BroadcastLayout.Type.CUSTOM.toString())) {
                 layout.put("stylesheet", properties.layout().getStylesheet());
             }
         }
@@ -474,7 +480,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
             requestJson.put("resolution", properties.resolution());
         }
         ObjectNode outputs = requestJson.putObject("outputs");
-        if(properties.hasHls()) {
+        if (properties.hasHls()) {
             outputs.set("hls", nodeFactory.objectNode());
         }
         ArrayNode rtmp = outputs.putArray("rtmp");
@@ -491,10 +497,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
         } catch (JsonProcessingException e) {
             throw new OpenTokException("Could not start an OpenTok Broadcast. The JSON body encoding failed.", e);
         }
-        Future<Response> request = this.preparePost(url)
-                .setBody(requestBody)
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.preparePost(url).setBody(requestBody)
+                .setHeader("Content-Type", "application/json").execute();
 
         try {
             Response response = request.get();
@@ -503,17 +507,19 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not start an OpenTok Broadcast. A bad request, check input  properties like resolution etc.");
+                    throw new RequestException(
+                            "Could not start an OpenTok Broadcast. A bad request, check input  properties like resolution etc.");
                 case 403:
                     throw new RequestException("Could not start an OpenTok Broadcast. The request was not authorized.");
-               
+
                 case 409:
-                    throw new RequestException("The broadcast has already been started for the session. SessionId = " + sessionId);
+                    throw new RequestException(
+                            "The broadcast has already been started for the session. SessionId = " + sessionId);
                 case 500:
                     throw new RequestException("Could not start an OpenTok Broadcast. A server error occurred.");
                 default:
-                    throw new RequestException("Could not start an OpenTok Broadcast. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not start an OpenTok Broadcast. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not start an OpenTok Broadcast.", e);
@@ -521,15 +527,12 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String stopBroadcast(String broadcastId)
-            throws OpenTokException {
+    public String stopBroadcast(String broadcastId) throws OpenTokException {
         String responseString = null;
         String requestBody = null;
         String url = this.apiUrl + "/v2/project/" + this.apiKey + "/broadcast/" + broadcastId + "/stop";
-        Future<Response> request = this.preparePost(url)
-                .setBody(requestBody)
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.preparePost(url).setBody(requestBody)
+                .setHeader("Content-Type", "application/json").execute();
 
         try {
             Response response = request.get();
@@ -538,16 +541,18 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not start an OpenTok Broadcast. A bad request, check input  properties like resolution etc.");
+                    throw new RequestException(
+                            "Could not start an OpenTok Broadcast. A bad request, check input  properties like resolution etc.");
                 case 403:
                     throw new RequestException("Could not start an OpenTok Broadcast. The request was not authorized.");
                 case 404:
-                    throw new RequestException("The broadcast " + broadcastId + "was not found or it has already stopped.");
+                    throw new RequestException(
+                            "The broadcast " + broadcastId + "was not found or it has already stopped.");
                 case 500:
                     throw new RequestException("Could not start an OpenTok Broadcast. A server error occurred.");
                 default:
-                    throw new RequestException("Could not start an OpenTok Broadcast. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not start an OpenTok Broadcast. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not start an OpenTok Broadcast.", e);
@@ -555,15 +560,12 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String getBroadcast(String broadcastId)
-            throws OpenTokException {
+    public String getBroadcast(String broadcastId) throws OpenTokException {
         String responseString = null;
         String requestBody = null;
         String url = this.apiUrl + "/v2/project/" + this.apiKey + "/broadcast/" + broadcastId;
-        Future<Response> request = this.prepareGet(url)
-                .setBody(requestBody)
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.prepareGet(url).setBody(requestBody)
+                .setHeader("Content-Type", "application/json").execute();
         try {
             Response response = request.get();
             switch (response.getStatusCode()) {
@@ -571,34 +573,41 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not get Broadcast stream information. A bad request, check input  properties.");
+                    throw new RequestException(
+                            "Could not get Broadcast stream information. A bad request, check input  properties.");
                 case 403:
-                    throw new RequestException("Could not get Broadcast stream information.. The request was not authorized.");
+                    throw new RequestException(
+                            "Could not get Broadcast stream information.. The request was not authorized.");
                 case 404:
                     throw new RequestException("The broadcast " + broadcastId + "was not found.");
                 case 500:
                     throw new RequestException("Could not get Broadcast stream information.. A server error occurred.");
                 default:
-                    throw new RequestException("Could not get Broadcast stream information.The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException(
+                            "Could not get Broadcast stream information.The server response was invalid."
+                                    + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not get Broadcast stream information.", e);
         }
         return responseString;
     }
+
     public String setBroadcastLayout(String broadcastId, BroadcastProperties properties) throws OpenTokException {
-        if(properties.layout() == null) {
-            throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+        if (properties.layout() == null) {
+            throw new RequestException(
+                    "Could not set the layout. Either an invalid JSON or an invalid layout options.");
         }
         String type = properties.layout().getType().toString();
         String stylesheet = properties.layout().getStylesheet();
-        if(StringUtils.isEmpty(type)) {
-            throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+        if (StringUtils.isEmpty(type)) {
+            throw new RequestException(
+                    "Could not set the layout. Either an invalid JSON or an invalid layout options.");
         }
-        if ((type.equals(BroadcastLayout.Type.CUSTOM.toString()) && StringUtils.isEmpty(stylesheet)) ||
-                (!type.equals(BroadcastLayout.Type.CUSTOM.toString()) && !StringUtils.isEmpty(stylesheet))) {
-            throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+        if ((type.equals(BroadcastLayout.Type.CUSTOM.toString()) && StringUtils.isEmpty(stylesheet))
+                || (!type.equals(BroadcastLayout.Type.CUSTOM.toString()) && !StringUtils.isEmpty(stylesheet))) {
+            throw new RequestException(
+                    "Could not set the layout. Either an invalid JSON or an invalid layout options.");
         }
         String responseString = null;
         String requestBody = null;
@@ -606,7 +615,7 @@ public class HttpClient extends DefaultAsyncHttpClient {
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         ObjectNode requestJson = nodeFactory.objectNode();
         requestJson.put("type", type);
-        if(type.equals(BroadcastLayout.Type.CUSTOM.toString())) {
+        if (type.equals(BroadcastLayout.Type.CUSTOM.toString())) {
             requestJson.put("stylesheet", properties.layout().getStylesheet());
         }
 
@@ -615,10 +624,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
         } catch (JsonProcessingException e) {
             throw new OpenTokException("Could not set the layout. The JSON body encoding failed.", e);
         }
-        Future<Response> request = this.preparePut(url)
-                .setBody(requestBody)
-                .setHeader("Content-Type", "application/json")
-                .execute();
+        Future<Response> request = this.preparePut(url).setBody(requestBody)
+                .setHeader("Content-Type", "application/json").execute();
         try {
             Response response = request.get();
             switch (response.getStatusCode()) {
@@ -626,14 +633,15 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not set the layout. Either an invalid JSON or an invalid layout options.");
+                    throw new RequestException(
+                            "Could not set the layout. Either an invalid JSON or an invalid layout options.");
                 case 403:
                     throw new RequestException("Could not set the layout. The request was not authorized.");
                 case 500:
                     throw new RequestException("Could not set the layout. A server error occurred.");
                 default:
-                    throw new RequestException("Could not set the layout. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not set the layout. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not set the layout, broadcastId = " + broadcastId, e);
@@ -641,9 +649,10 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String forceDisconnect(String sessionId, String connectionId) throws   OpenTokException , RequestException {
+    public String forceDisconnect(String sessionId, String connectionId) throws OpenTokException, RequestException {
         String responseString = null;
-        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId + "/connection/"+ connectionId ;
+        String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId + "/connection/"
+                + connectionId;
         Future<Response> request = this.prepareDelete(url).execute();
 
         try {
@@ -653,14 +662,17 @@ public class HttpClient extends DefaultAsyncHttpClient {
                     responseString = response.getResponseBody();
                     break;
                 case 400:
-                    throw new RequestException("Could not force disconnect. One of the arguments — sessionId or connectionId — is invalid.");
+                    throw new RequestException(
+                            "Could not force disconnect. One of the arguments — sessionId or connectionId — is invalid.");
                 case 403:
-                    throw new RequestException("Could not force disconnect. You are not authorized to forceDisconnect, check your authentication credentials.");
+                    throw new RequestException(
+                            "Could not force disconnect. You are not authorized to forceDisconnect, check your authentication credentials.");
                 case 404:
-                    throw new RequestException("Could not force disconnect. The client specified by the connectionId property is not connected to the session.");
+                    throw new RequestException(
+                            "Could not force disconnect. The client specified by the connectionId property is not connected to the session.");
                 default:
-                    throw new RequestException("Could not force disconnect. The server response was invalid." +
-                            " response code: " + response.getStatusCode());
+                    throw new RequestException("Could not force disconnect. The server response was invalid."
+                            + " response code: " + response.getStatusCode());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new RequestException("Could not force disconnect", e);
@@ -669,7 +681,8 @@ public class HttpClient extends DefaultAsyncHttpClient {
         return responseString;
     }
 
-    public String forceMute(String sessionId, String streamId, String[] excludedStreamIds) throws   OpenTokException , RequestException {
+    public String forceMute(String sessionId, String streamId, String[] excludedStreamIds)
+            throws OpenTokException, RequestException, IOException {
         String responseString = null;
         String body= "";
         if(streamId!=null && excludedStreamIds != null)
@@ -678,8 +691,13 @@ public class HttpClient extends DefaultAsyncHttpClient {
         }
         if(excludedStreamIds!= null)
         {
+            Map<String,JSONArray> jsonMap = new HashMap<>();
             JSONArray jArray = new JSONArray(Arrays.asList(excludedStreamIds));
-            body = jArray.toJSONString();
+            jsonMap.put("excluded", jArray);
+            JSONObject obj = new JSONObject(jsonMap);
+            StringWriter jText = new StringWriter();
+            obj.writeJSONString(jText);
+            body = jText.toString();
         }
         String url = this.apiUrl + "/v2/project/" + this.apiKey + "/session/" + sessionId;
         if(streamId != null)
