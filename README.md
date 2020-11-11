@@ -397,6 +397,7 @@ Your application server can mute all streams from an OpenTok session but specifi
 method of the `com.opentok.OpenTok` instance.
 
 ```java
+String[] excludedStreamIds = {"stream1","stream2"};
 opentok.forceMuteAll(sessionId, excludedStreamIds);
 ```
 
