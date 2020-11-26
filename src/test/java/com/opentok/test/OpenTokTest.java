@@ -42,6 +42,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -120,41 +121,33 @@ public class OpenTokTest {
      */
     @Test
     public void testConfigureRequestTimeout() throws OpenTokException {
-        assertThrows(RequestException.class, () ->{
+        assertThrows(RequestException.class, () -> {
             sdk = new OpenTok.Builder(apiKey, apiSecret).apiUrl(apiUrl).requestTimeout(6).build();
 
             String sessionId = "SESSIONID";
-            stubFor(post(urlEqualTo(SESSION_CREATE))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withFixedDelay(7000)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\"," +
-                                    "\"partner_id\":\"123456\"," +
-                                    "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\"," +
-                                    "\"media_server_url\":\"\"}]")));
+            stubFor(post(urlEqualTo(SESSION_CREATE)).willReturn(
+                    aResponse().withStatus(200).withFixedDelay(7000).withHeader("Content-Type", "application/json")
+                            .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\","
+                                    + "\"partner_id\":\"123456\"," + "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\","
+                                    + "\"media_server_url\":\"\"}]")));
 
             Session session = sdk.createSession();
         });
     }
-    
+
     @Test
     public void testSignalAllConnections() throws OpenTokException {
         String sessionId = "SESSIONID";
         String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/signal";
-        stubFor(post(urlEqualTo(path))
-                .willReturn(aResponse()
-                        .withStatus(204)));
+        stubFor(post(urlEqualTo(path)).willReturn(aResponse().withStatus(204)));
         SignalProperties properties = new SignalProperties.Builder().type("test").data("Signal test string").build();
         sdk.signal(sessionId, properties);
         verify(postRequestedFor(urlMatching(path)));
-        verify(postRequestedFor(urlMatching(path))
-                .withHeader("Content-Type", equalTo("application/json")));
+        verify(postRequestedFor(urlMatching(path)).withHeader("Content-Type", equalTo("application/json")));
 
         verify(postRequestedFor(urlMatching(path))
                 .withRequestBody(equalToJson("{ \"type\":\"test\",\"data\":\"Signal test string\" }")));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(path)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(path)))));
         Helpers.verifyUserAgent();
     }
 
@@ -168,12 +161,12 @@ public class OpenTokTest {
             sdk.signal(sessionId, properties);
         } catch (InvalidArgumentException e) {
 
-            assertEquals(e.getMessage(),"Session string null or empty");
+            assertEquals(e.getMessage(), "Session string null or empty");
         }
     }
 
     @Test
-    public void testSignalWithEmoji() throws OpenTokException  {
+    public void testSignalWithEmoji() throws OpenTokException {
         String sessionId = "SESSIONID";
         String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/signal";
         Boolean exceptionThrown = false;
@@ -186,25 +179,22 @@ public class OpenTokTest {
         }
         assertTrue(exceptionThrown);
     }
+
     @Test
     public void testSignalSingleConnection() throws OpenTokException {
         String sessionId = "SESSIONID";
         String connectionId = "CONNECTIONID";
-        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId +"/signal";
-        stubFor(post(urlEqualTo(path))
-                .willReturn(aResponse()
-                        .withStatus(204)));
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId + "/signal";
+        stubFor(post(urlEqualTo(path)).willReturn(aResponse().withStatus(204)));
         SignalProperties properties = new SignalProperties.Builder().type("test").data("Signal test string").build();
         sdk.signal(sessionId, connectionId, properties);
 
         verify(postRequestedFor(urlMatching(path)));
-        verify(postRequestedFor(urlMatching(path))
-                .withHeader("Content-Type", equalTo("application/json")));
+        verify(postRequestedFor(urlMatching(path)).withHeader("Content-Type", equalTo("application/json")));
 
         verify(postRequestedFor(urlMatching(path))
                 .withRequestBody(equalToJson("{ \"type\":\"test\",\"data\":\"Signal test string\" }")));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(path)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(path)))));
         Helpers.verifyUserAgent();
     }
 
@@ -212,14 +202,14 @@ public class OpenTokTest {
     public void testSignalWithEmptyConnectionID() throws OpenTokException {
         String sessionId = "SESSIONID";
         String connectionId = "";
-        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId +"/signal";
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId + "/signal";
 
         SignalProperties properties = new SignalProperties.Builder().type("test").data("Signal test string").build();
         try {
             sdk.signal(sessionId, connectionId, properties);
         } catch (InvalidArgumentException e) {
 
-            assertEquals(e.getMessage(),"Session or Connection string null or empty");
+            assertEquals(e.getMessage(), "Session or Connection string null or empty");
         }
     }
 
@@ -227,14 +217,14 @@ public class OpenTokTest {
     public void testSignalWithConnectionIDAndEmptySessionID() throws OpenTokException {
         String sessionId = "";
         String connectionId = "CONNECTIONID";
-        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId +"/signal";
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId + "/signal";
 
         SignalProperties properties = new SignalProperties.Builder().type("test").data("Signal test string").build();
         try {
             sdk.signal(sessionId, connectionId, properties);
         } catch (InvalidArgumentException e) {
 
-            assertEquals(e.getMessage(),"Session or Connection string null or empty");
+            assertEquals(e.getMessage(), "Session or Connection string null or empty");
         }
     }
 
@@ -242,13 +232,13 @@ public class OpenTokTest {
     public void testSignalWithEmptySessionAndConnectionID() throws OpenTokException {
         String sessionId = "";
         String connectionId = "";
-        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId +"/signal";
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId + "/signal";
 
         SignalProperties properties = new SignalProperties.Builder().type("test").data("Signal test string").build();
         try {
             sdk.signal(sessionId, connectionId, properties);
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"Session or Connection string null or empty");
+            assertEquals(e.getMessage(), "Session or Connection string null or empty");
         }
     }
 
@@ -256,13 +246,10 @@ public class OpenTokTest {
     public void testCreateDefaultSession() throws OpenTokException {
         String sessionId = "SESSIONID";
         stubFor(post(urlEqualTo(SESSION_CREATE))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\"," +
-                                "\"partner_id\":\"123456\"," +
-                                "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\"," +
-                                "\"media_server_url\":\"\"}]")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\","
+                                + "\"partner_id\":\"123456\"," + "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\","
+                                + "\"media_server_url\":\"\"}]")));
 
         Session session = sdk.createSession();
 
@@ -273,11 +260,9 @@ public class OpenTokTest {
         assertEquals(ArchiveMode.MANUAL, session.getProperties().archiveMode());
         assertNull(session.getProperties().getLocation());
 
-        verify(postRequestedFor(urlMatching(SESSION_CREATE))
-                .withRequestBody(matching(".*p2p.preference=enabled.*"))
+        verify(postRequestedFor(urlMatching(SESSION_CREATE)).withRequestBody(matching(".*p2p.preference=enabled.*"))
                 .withRequestBody(matching(".*archiveMode=manual.*")));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
         Helpers.verifyUserAgent();
     }
 
@@ -285,17 +270,12 @@ public class OpenTokTest {
     public void testCreateRoutedSession() throws OpenTokException {
         String sessionId = "SESSIONID";
         stubFor(post(urlEqualTo(SESSION_CREATE))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\"," +
-                                "\"partner_id\":\"123456\"," +
-                                "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\"," +
-                                "\"media_server_url\":\"\"}]")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\","
+                                + "\"partner_id\":\"123456\"," + "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\","
+                                + "\"media_server_url\":\"\"}]")));
 
-        SessionProperties properties = new SessionProperties.Builder()
-                .mediaMode(MediaMode.ROUTED)
-                .build();
+        SessionProperties properties = new SessionProperties.Builder().mediaMode(MediaMode.ROUTED).build();
         Session session = sdk.createSession(properties);
 
         assertNotNull(session);
@@ -305,10 +285,10 @@ public class OpenTokTest {
         assertNull(session.getProperties().getLocation());
 
         verify(postRequestedFor(urlMatching(SESSION_CREATE))
-                // NOTE: this is a pretty bad way to verify, ideally we can decode the body and then query the object
+                // NOTE: this is a pretty bad way to verify, ideally we can decode the body and
+                // then query the object
                 .withRequestBody(matching(".*p2p.preference=disabled.*")));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
         Helpers.verifyUserAgent();
     }
 
@@ -317,17 +297,12 @@ public class OpenTokTest {
         String sessionId = "SESSIONID";
         String locationHint = "12.34.56.78";
         stubFor(post(urlEqualTo(SESSION_CREATE))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\"," +
-                                "\"partner_id\":\"123456\"," +
-                                "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\"," +
-                                "\"media_server_url\":\"\"}]")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\","
+                                + "\"partner_id\":\"123456\"," + "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\","
+                                + "\"media_server_url\":\"\"}]")));
 
-        SessionProperties properties = new SessionProperties.Builder()
-                .location(locationHint)
-                .build();
+        SessionProperties properties = new SessionProperties.Builder().location(locationHint).build();
         Session session = sdk.createSession(properties);
 
         assertNotNull(session);
@@ -337,10 +312,10 @@ public class OpenTokTest {
         assertEquals(locationHint, session.getProperties().getLocation());
 
         verify(postRequestedFor(urlMatching(SESSION_CREATE))
-                // TODO: this is a pretty bad way to verify, ideally we can decode the body and then query the object
-                .withRequestBody(matching(".*location="+locationHint+".*")));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
+                // TODO: this is a pretty bad way to verify, ideally we can decode the body and
+                // then query the object
+                .withRequestBody(matching(".*location=" + locationHint + ".*")));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
         Helpers.verifyUserAgent();
     }
 
@@ -349,17 +324,12 @@ public class OpenTokTest {
         String sessionId = "SESSIONID";
         String locationHint = "12.34.56.78";
         stubFor(post(urlEqualTo(SESSION_CREATE))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\"," +
-                                "\"partner_id\":\"123456\"," +
-                                "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\"," +
-                                "\"media_server_url\":\"\"}]")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("[{\"session_id\":\"" + sessionId + "\",\"project_id\":\"00000000\","
+                                + "\"partner_id\":\"123456\"," + "\"create_dt\":\"Mon Mar 17 00:41:31 PDT 2014\","
+                                + "\"media_server_url\":\"\"}]")));
 
-        SessionProperties properties = new SessionProperties.Builder()
-                .archiveMode(ArchiveMode.ALWAYS)
-                .build();
+        SessionProperties properties = new SessionProperties.Builder().archiveMode(ArchiveMode.ALWAYS).build();
         Session session = sdk.createSession(properties);
 
         assertNotNull(session);
@@ -367,36 +337,34 @@ public class OpenTokTest {
         assertEquals(sessionId, session.getSessionId());
         assertEquals(ArchiveMode.ALWAYS, session.getProperties().archiveMode());
 
-
         verify(postRequestedFor(urlMatching(SESSION_CREATE))
-                // TODO: this is a pretty bad way to verify, ideally we can decode the body and then query the object
+                // TODO: this is a pretty bad way to verify, ideally we can decode the body and
+                // then query the object
                 .withRequestBody(matching(".*archiveMode=always.*")));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(SESSION_CREATE)))));
         Helpers.verifyUserAgent();
     }
 
     @Test(expected = InvalidArgumentException.class)
     public void testCreateBadSession() throws OpenTokException {
-        SessionProperties properties = new SessionProperties.Builder()
-                .location("NOT A VALID IP")
-                .build();
+        SessionProperties properties = new SessionProperties.Builder().location("NOT A VALID IP").build();
     }
 
-//    This is not part of the API because it would introduce a backwards incompatible change.
-//    @Test(expected = InvalidArgumentException.class)
-//    public void testCreateInvalidAlwaysArchivedAndRelayedSession() throws OpenTokException {
-//        SessionProperties properties = new SessionProperties.Builder()
-//                .mediaMode(MediaMode.RELAYED)
-//                .archiveMode(ArchiveMode.ALWAYS)
-//                .build();
-//    }
+    // This is not part of the API because it would introduce a backwards
+    // incompatible change.
+    // @Test(expected = InvalidArgumentException.class)
+    // public void testCreateInvalidAlwaysArchivedAndRelayedSession() throws
+    // OpenTokException {
+    // SessionProperties properties = new SessionProperties.Builder()
+    // .mediaMode(MediaMode.RELAYED)
+    // .archiveMode(ArchiveMode.ALWAYS)
+    // .build();
+    // }
 
     // TODO: test session creation conditions that result in errors
 
     @Test
-    public void testTokenDefault() throws
-            OpenTokException, UnsupportedEncodingException, NoSuchAlgorithmException,
+    public void testTokenDefault() throws OpenTokException, UnsupportedEncodingException, NoSuchAlgorithmException,
             SignatureException, InvalidKeyException {
 
         int apiKey = 123456;
@@ -415,8 +383,7 @@ public class OpenTokTest {
     }
 
     @Test
-    public void testTokenLayoutClass() throws
-            OpenTokException, UnsupportedEncodingException, NoSuchAlgorithmException,
+    public void testTokenLayoutClass() throws OpenTokException, UnsupportedEncodingException, NoSuchAlgorithmException,
             SignatureException, InvalidKeyException {
 
         int apiKey = 123456;
@@ -424,9 +391,8 @@ public class OpenTokTest {
         OpenTok opentok = new OpenTok(apiKey, apiSecret);
         String sessionId = "1_MX4xMjM0NTZ-flNhdCBNYXIgMTUgMTQ6NDI6MjMgUERUIDIwMTR-MC40OTAxMzAyNX4";
 
-        String token = sdk.generateToken(sessionId, new TokenOptions.Builder()
-                .initialLayoutClassList(Arrays.asList("full", "focus"))
-                .build());
+        String token = sdk.generateToken(sessionId,
+                new TokenOptions.Builder().initialLayoutClassList(Arrays.asList("full", "focus")).build());
 
         assertNotNull(token);
         assertTrue(Helpers.verifyTokenSignature(token, apiSecret));
@@ -436,8 +402,7 @@ public class OpenTokTest {
     }
 
     @Test
-    public void testTokenRoles() throws
-            OpenTokException, UnsupportedEncodingException, NoSuchAlgorithmException,
+    public void testTokenRoles() throws OpenTokException, UnsupportedEncodingException, NoSuchAlgorithmException,
             SignatureException, InvalidKeyException {
 
         int apiKey = 123456;
@@ -447,9 +412,7 @@ public class OpenTokTest {
         Role role = Role.SUBSCRIBER;
 
         String defaultToken = opentok.generateToken(sessionId);
-        String roleToken = sdk.generateToken(sessionId, new TokenOptions.Builder()
-                .role(role)
-                .build());
+        String roleToken = sdk.generateToken(sessionId, new TokenOptions.Builder().role(role).build());
 
         assertNotNull(defaultToken);
         assertNotNull(roleToken);
@@ -463,9 +426,8 @@ public class OpenTokTest {
     }
 
     @Test
-    public void testTokenExpireTime() throws
-            OpenTokException, SignatureException, NoSuchAlgorithmException, InvalidKeyException,
-            UnsupportedEncodingException {
+    public void testTokenExpireTime() throws OpenTokException, SignatureException, NoSuchAlgorithmException,
+            InvalidKeyException, UnsupportedEncodingException {
 
         int apiKey = 123456;
         String apiSecret = "1234567890abcdef1234567890abcdef1234567890";
@@ -478,20 +440,17 @@ public class OpenTokTest {
         ArrayList<Exception> exceptions = new ArrayList<Exception>();
 
         String defaultToken = opentok.generateToken(sessionId);
-        String oneHourToken = opentok.generateToken(sessionId, new TokenOptions.Builder()
-            .expireTime(inOneHour)
-            .build());
+        String oneHourToken = opentok.generateToken(sessionId,
+                new TokenOptions.Builder().expireTime(inOneHour).build());
         try {
-            String earlyExpireTimeToken = opentok.generateToken(sessionId, new TokenOptions.Builder()
-            .expireTime(now - 10)
-            .build());
+            String earlyExpireTimeToken = opentok.generateToken(sessionId,
+                    new TokenOptions.Builder().expireTime(now - 10).build());
         } catch (Exception exception) {
             exceptions.add(exception);
         }
         try {
-            String lateExpireTimeToken = opentok.generateToken(sessionId, new TokenOptions.Builder()
-                .expireTime(inThirtyDays + (60 * 60 * 24) /* 31 days */)
-                .build());
+            String lateExpireTimeToken = opentok.generateToken(sessionId,
+                    new TokenOptions.Builder().expireTime(inThirtyDays + (60 * 60 * 24) /* 31 days */).build());
         } catch (Exception exception) {
             exceptions.add(exception);
         }
@@ -513,9 +472,8 @@ public class OpenTokTest {
     }
 
     @Test
-    public void testTokenConnectionData() throws
-            OpenTokException, SignatureException, NoSuchAlgorithmException, InvalidKeyException,
-            UnsupportedEncodingException {
+    public void testTokenConnectionData() throws OpenTokException, SignatureException, NoSuchAlgorithmException,
+            InvalidKeyException, UnsupportedEncodingException {
 
         int apiKey = 123456;
         String apiSecret = "1234567890abcdef1234567890abcdef1234567890";
@@ -526,13 +484,10 @@ public class OpenTokTest {
         Exception tooLongException = null;
 
         String defaultToken = opentok.generateToken(sessionId);
-        String dataBearingToken = opentok.generateToken(sessionId, new TokenOptions.Builder()
-            .data(actualData)
-            .build());
+        String dataBearingToken = opentok.generateToken(sessionId, new TokenOptions.Builder().data(actualData).build());
         try {
-            String dataTooLongToken = opentok.generateToken(sessionId, new TokenOptions.Builder()
-                    .data(StringUtils.repeat("x", 1001))
-                    .build());
+            String dataTooLongToken = opentok.generateToken(sessionId,
+                    new TokenOptions.Builder().data(StringUtils.repeat("x", 1001)).build());
         } catch (InvalidArgumentException e) {
             tooLongException = e;
         }
@@ -548,7 +503,6 @@ public class OpenTokTest {
         assertEquals(actualData, dataBearingTokenData.get("connection_data"));
         assertEquals(InvalidArgumentException.class, tooLongException.getClass());
     }
-
 
     @Test
     public void testTokenBadSessionId() throws OpenTokException {
@@ -579,30 +533,24 @@ public class OpenTokTest {
         }
     }
 
-    /* TODO: find a way to match JSON without caring about spacing
-    .withRequestBody(matching("."+".")) in the following archive tests   */
-    
+    /*
+     * TODO: find a way to match JSON without caring about spacing
+     * .withRequestBody(matching("."+".")) in the following archive tests
+     */
+
     @Test
     public void testGetArchive() throws OpenTokException {
         String archiveId = "ARCHIVEID";
         stubFor(get(urlEqualTo(archivePath + "/" + archiveId))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395187836000,\n" +
-                                "          \"duration\" : 62,\n" +
-                                "          \"id\" : \"" + archiveId + "\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 8347554,\n" +
-                                "          \"status\" : \"available\",\n" +
-                                "          \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F" +
-                                archiveId + "%2Farchive.mp4?Expires=1395194362&AWSAccessKeyId=AKIAI6LQCPIXYVWCQV6Q&Si" +
-                                "gnature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"createdAt\" : 1395187836000,\n"
+                                + "          \"duration\" : 62,\n" + "          \"id\" : \"" + archiveId + "\",\n"
+                                + "          \"name\" : \"\",\n" + "          \"partnerId\" : 123456,\n"
+                                + "          \"reason\" : \"\",\n" + "          \"sessionId\" : \"SESSIONID\",\n"
+                                + "          \"size\" : 8347554,\n" + "          \"status\" : \"available\",\n"
+                                + "          \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F"
+                                + archiveId + "%2Farchive.mp4?Expires=1395194362&AWSAccessKeyId=AKIAI6LQCPIXYVWCQV6Q&Si"
+                                + "gnature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "        }")));
 
         Archive archive = sdk.getArchive(archiveId);
 
@@ -615,8 +563,10 @@ public class OpenTokTest {
         assertEquals("SESSIONID", archive.getSessionId());
         assertEquals(8347554, archive.getSize());
         assertEquals(Archive.Status.AVAILABLE, archive.getStatus());
-        assertEquals("http://tokbox.com.archive2.s3.amazonaws.com/123456%2F"+archiveId +"%2Farchive.mp4?Expires=13951" +
-                "94362&AWSAccessKeyId=AKIAI6LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", archive.getUrl());
+        assertEquals(
+                "http://tokbox.com.archive2.s3.amazonaws.com/123456%2F" + archiveId + "%2Farchive.mp4?Expires=13951"
+                        + "94362&AWSAccessKeyId=AKIAI6LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                archive.getUrl());
 
         verify(getRequestedFor(urlMatching(archivePath + "/" + archiveId)));
         assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
@@ -628,92 +578,58 @@ public class OpenTokTest {
 
     @Test
     public void testListArchives() throws OpenTokException {
-        stubFor(get(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"count\" : 60,\n" +
-                                "          \"items\" : [ {\n" +
-                                "            \"createdAt\" : 1395187930000,\n" +
-                                "            \"duration\" : 22,\n" +
-                                "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 247145329511,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5" +
-                                "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1395187910000,\n" +
-                                "            \"duration\" : 14,\n" +
-                                "            \"id\" : \"5350f06f-0166-402e-bc27-09ba54948512\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 1952651,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F5350f06" +
-                                "f-0166-402e-bc27-09ba54948512%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1395187836000,\n" +
-                                "            \"duration\" : 62,\n" +
-                                "            \"id\" : \"f6e7ee58-d6cf-4a59-896b-6d56b158ec71\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 8347554,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Ff6e7ee5" +
-                                "8-d6cf-4a59-896b-6d56b158ec71%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1395183243000,\n" +
-                                "            \"duration\" : 544,\n" +
-                                "            \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 78499758,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F30b3ebf" +
-                                "1-ba36-4f5b-8def-6f70d9986fe9%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1394396753000,\n" +
-                                "            \"duration\" : 24,\n" +
-                                "            \"id\" : \"b8f64de1-e218-4091-9544-4cbf369fc238\",\n" +
-                                "            \"name\" : \"showtime again\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 2227849,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fb8f64de" +
-                                "1-e218-4091-9544-4cbf369fc238%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1394321113000,\n" +
-                                "            \"duration\" : 1294,\n" +
-                                "            \"id\" : \"832641bf-5dbf-41a1-ad94-fea213e59a92\",\n" +
-                                "            \"name\" : \"showtime\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 42165242,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F832641b" +
-                                "f-5dbf-41a1-ad94-fea213e59a92%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          } ]\n" +
-                                "        }")));
+        stubFor(get(urlEqualTo(archivePath)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"count\" : 60,\n" + "          \"items\" : [ {\n"
+                        + "            \"createdAt\" : 1395187930000,\n" + "            \"duration\" : 22,\n"
+                        + "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 247145329511,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5"
+                        + "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1395187910000,\n" + "            \"duration\" : 14,\n"
+                        + "            \"id\" : \"5350f06f-0166-402e-bc27-09ba54948512\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 1952651,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F5350f06"
+                        + "f-0166-402e-bc27-09ba54948512%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1395187836000,\n" + "            \"duration\" : 62,\n"
+                        + "            \"id\" : \"f6e7ee58-d6cf-4a59-896b-6d56b158ec71\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 8347554,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Ff6e7ee5"
+                        + "8-d6cf-4a59-896b-6d56b158ec71%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1395183243000,\n" + "            \"duration\" : 544,\n"
+                        + "            \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 78499758,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F30b3ebf"
+                        + "1-ba36-4f5b-8def-6f70d9986fe9%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1394396753000,\n" + "            \"duration\" : 24,\n"
+                        + "            \"id\" : \"b8f64de1-e218-4091-9544-4cbf369fc238\",\n"
+                        + "            \"name\" : \"showtime again\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 2227849,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fb8f64de"
+                        + "1-e218-4091-9544-4cbf369fc238%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1394321113000,\n" + "            \"duration\" : 1294,\n"
+                        + "            \"id\" : \"832641bf-5dbf-41a1-ad94-fea213e59a92\",\n"
+                        + "            \"name\" : \"showtime\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 42165242,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F832641b"
+                        + "f-5dbf-41a1-ad94-fea213e59a92%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          } ]\n"
+                        + "        }")));
         ArchiveList archives = sdk.listArchives();
         assertNotNull(archives);
         assertEquals(6, archives.size());
@@ -721,8 +637,7 @@ public class OpenTokTest {
         assertTrue(archives.get(0) instanceof Archive);
         assertEquals("ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d", archives.get(0).getId());
         verify(getRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(getRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(getRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
@@ -731,26 +646,17 @@ public class OpenTokTest {
         String sessionId = "SESSIONID";
         String url = archivePath + "?offset=1&count=1";
         stubFor(get(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"count\" : 60,\n" +
-                                "          \"items\" : [ {\n" +
-                                "            \"createdAt\" : 1395187930000,\n" +
-                                "            \"duration\" : 22,\n" +
-                                "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 2909274,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5" +
-                                "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }]\n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"count\" : 60,\n" + "          \"items\" : [ {\n"
+                                + "            \"createdAt\" : 1395187930000,\n" + "            \"duration\" : 22,\n"
+                                + "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n"
+                                + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                                + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                                + "            \"size\" : 2909274,\n" + "            \"status\" : \"available\",\n"
+                                + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5"
+                                + "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                                + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }]\n"
+                                + "        }")));
 
         ArchiveList archives = sdk.listArchives(1, 1);
         assertNotNull(archives);
@@ -760,8 +666,7 @@ public class OpenTokTest {
         assertEquals("ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d", archives.get(0).getId());
 
         verify(getRequestedFor(urlEqualTo(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(getRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(getRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
 
@@ -770,26 +675,17 @@ public class OpenTokTest {
         String sessionId = "SESSIONID";
         String url = archivePath + "?offset=1&count=1&sessionId=" + sessionId;
         stubFor(get(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"count\" : 60,\n" +
-                                "          \"items\" : [ {\n" +
-                                "            \"createdAt\" : 1395187930000,\n" +
-                                "            \"duration\" : 22,\n" +
-                                "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 2909274,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5" +
-                                "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }]\n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"count\" : 60,\n" + "          \"items\" : [ {\n"
+                                + "            \"createdAt\" : 1395187930000,\n" + "            \"duration\" : 22,\n"
+                                + "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n"
+                                + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                                + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                                + "            \"size\" : 2909274,\n" + "            \"status\" : \"available\",\n"
+                                + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5"
+                                + "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                                + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }]\n"
+                                + "        }")));
         ArchiveList archives = sdk.listArchives(sessionId, 1, 1);
         assertNotNull(archives);
         assertEquals(1, archives.size());
@@ -797,8 +693,7 @@ public class OpenTokTest {
         assertTrue(archives.get(0) instanceof Archive);
         assertEquals("ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d", archives.get(0).getId());
         verify(getRequestedFor(urlEqualTo(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(getRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(getRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
 
@@ -806,92 +701,58 @@ public class OpenTokTest {
     public void testListArchivesWithSessionId() throws OpenTokException {
         String sessionId = "SESSIONID";
         String url = archivePath + "?sessionId=" + sessionId;
-        stubFor(get(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"count\" : 60,\n" +
-                                "          \"items\" : [ {\n" +
-                                "            \"createdAt\" : 1395187930000,\n" +
-                                "            \"duration\" : 22,\n" +
-                                "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 2909274,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5" +
-                                "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1395187910000,\n" +
-                                "            \"duration\" : 14,\n" +
-                                "            \"id\" : \"5350f06f-0166-402e-bc27-09ba54948512\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 1952651,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F5350f06" +
-                                "f-0166-402e-bc27-09ba54948512%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1395187836000,\n" +
-                                "            \"duration\" : 62,\n" +
-                                "            \"id\" : \"f6e7ee58-d6cf-4a59-896b-6d56b158ec71\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 8347554,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Ff6e7ee5" +
-                                "8-d6cf-4a59-896b-6d56b158ec71%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1395183243000,\n" +
-                                "            \"duration\" : 544,\n" +
-                                "            \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "            \"name\" : \"\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 78499758,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F30b3ebf" +
-                                "1-ba36-4f5b-8def-6f70d9986fe9%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1394396753000,\n" +
-                                "            \"duration\" : 24,\n" +
-                                "            \"id\" : \"b8f64de1-e218-4091-9544-4cbf369fc238\",\n" +
-                                "            \"name\" : \"showtime again\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 2227849,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fb8f64de" +
-                                "1-e218-4091-9544-4cbf369fc238%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          }, {\n" +
-                                "            \"createdAt\" : 1394321113000,\n" +
-                                "            \"duration\" : 1294,\n" +
-                                "            \"id\" : \"832641bf-5dbf-41a1-ad94-fea213e59a92\",\n" +
-                                "            \"name\" : \"showtime\",\n" +
-                                "            \"partnerId\" : 123456,\n" +
-                                "            \"reason\" : \"\",\n" +
-                                "            \"sessionId\" : \"SESSIONID\",\n" +
-                                "            \"size\" : 42165242,\n" +
-                                "            \"status\" : \"available\",\n" +
-                                "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F832641b" +
-                                "f-5dbf-41a1-ad94-fea213e59a92%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6" +
-                                "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" +
-                                "          } ]\n" +
-                                "        }")));
+        stubFor(get(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"count\" : 60,\n" + "          \"items\" : [ {\n"
+                        + "            \"createdAt\" : 1395187930000,\n" + "            \"duration\" : 22,\n"
+                        + "            \"id\" : \"ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 2909274,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fef546c5"
+                        + "a-4fd7-4e59-ab3d-f1cfb4148d1d%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1395187910000,\n" + "            \"duration\" : 14,\n"
+                        + "            \"id\" : \"5350f06f-0166-402e-bc27-09ba54948512\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 1952651,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F5350f06"
+                        + "f-0166-402e-bc27-09ba54948512%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1395187836000,\n" + "            \"duration\" : 62,\n"
+                        + "            \"id\" : \"f6e7ee58-d6cf-4a59-896b-6d56b158ec71\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 8347554,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Ff6e7ee5"
+                        + "8-d6cf-4a59-896b-6d56b158ec71%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1395183243000,\n" + "            \"duration\" : 544,\n"
+                        + "            \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "            \"name\" : \"\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 78499758,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F30b3ebf"
+                        + "1-ba36-4f5b-8def-6f70d9986fe9%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1394396753000,\n" + "            \"duration\" : 24,\n"
+                        + "            \"id\" : \"b8f64de1-e218-4091-9544-4cbf369fc238\",\n"
+                        + "            \"name\" : \"showtime again\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 2227849,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2Fb8f64de"
+                        + "1-e218-4091-9544-4cbf369fc238%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          }, {\n"
+                        + "            \"createdAt\" : 1394321113000,\n" + "            \"duration\" : 1294,\n"
+                        + "            \"id\" : \"832641bf-5dbf-41a1-ad94-fea213e59a92\",\n"
+                        + "            \"name\" : \"showtime\",\n" + "            \"partnerId\" : 123456,\n"
+                        + "            \"reason\" : \"\",\n" + "            \"sessionId\" : \"SESSIONID\",\n"
+                        + "            \"size\" : 42165242,\n" + "            \"status\" : \"available\",\n"
+                        + "            \"url\" : \"http://tokbox.com.archive2.s3.amazonaws.com/123456%2F832641b"
+                        + "f-5dbf-41a1-ad94-fea213e59a92%2Farchive.mp4?Expires=1395188695&AWSAccessKeyId=AKIAI6"
+                        + "LQCPIXYVWCQV6Q&Signature=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n" + "          } ]\n"
+                        + "        }")));
         ArchiveList archives = sdk.listArchives(sessionId);
         assertNotNull(archives);
         assertEquals(6, archives.size());
@@ -899,8 +760,7 @@ public class OpenTokTest {
         assertTrue(archives.get(0) instanceof Archive);
         assertEquals("ef546c5a-4fd7-4e59-ab3d-f1cfb4148d1d", archives.get(0).getId());
         verify(getRequestedFor(urlEqualTo(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(getRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(getRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
 
@@ -911,13 +771,13 @@ public class OpenTokTest {
         try {
             ArchiveList archives = sdk.listArchives("");
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"Session Id cannot be null or empty");
+            assertEquals(e.getMessage(), "Session Id cannot be null or empty");
             exceptionCount++;
         }
         try {
             ArchiveList archives = sdk.listArchives(null);
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"Session Id cannot be null or empty");
+            assertEquals(e.getMessage(), "Session Id cannot be null or empty");
             exceptionCount++;
         }
         assertTrue(exceptionCount == testCount);
@@ -928,27 +788,31 @@ public class OpenTokTest {
         int exceptionCount = 0;
         int testCount = 4;
         try {
-            ArchiveList archives = sdk.listArchives(-2,0);
+            ArchiveList archives = sdk.listArchives(-2, 0);
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
+            assertEquals(e.getMessage(),
+                    "Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
             exceptionCount++;
         }
         try {
-            ArchiveList archives = sdk.listArchives(0,1200);
+            ArchiveList archives = sdk.listArchives(0, 1200);
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
+            assertEquals(e.getMessage(),
+                    "Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
             exceptionCount++;
         }
         try {
-            ArchiveList archives = sdk.listArchives(-10,12);
+            ArchiveList archives = sdk.listArchives(-10, 12);
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
+            assertEquals(e.getMessage(),
+                    "Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
             exceptionCount++;
         }
         try {
-            ArchiveList archives = sdk.listArchives(-10,1200);
+            ArchiveList archives = sdk.listArchives(-10, 1200);
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
+            assertEquals(e.getMessage(),
+                    "Make sure count parameter value is >= 0 and/or offset parameter value is <=1000");
             exceptionCount++;
         }
         assertTrue(exceptionCount == testCount);
@@ -958,29 +822,20 @@ public class OpenTokTest {
     public void testStartArchive() throws OpenTokException {
         String sessionId = "SESSIONID";
         stubFor(post(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243556,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"url\" : null\n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"createdAt\" : 1395183243556,\n" + "          \"duration\" : 0,\n"
+                                + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                                + "          \"name\" : \"\",\n" + "          \"partnerId\" : 123456,\n"
+                                + "          \"reason\" : \"\",\n" + "          \"sessionId\" : \"SESSIONID\",\n"
+                                + "          \"size\" : 0,\n" + "          \"status\" : \"started\",\n"
+                                + "          \"url\" : null\n" + "        }")));
         ArchiveProperties properties = new ArchiveProperties.Builder().name(null).build();
         Archive archive = sdk.startArchive(sessionId, properties);
         assertNotNull(archive);
         assertEquals(sessionId, archive.getSessionId());
         assertNotNull(archive.getId());
         verify(postRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
@@ -988,74 +843,62 @@ public class OpenTokTest {
     public void testStartArchiveWithResolution() throws OpenTokException {
         String sessionId = "SESSIONID";
         ArchiveProperties properties = new ArchiveProperties.Builder().resolution("1280x720").build();
-        stubFor(post(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243556,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"resolution\" : \"1280x720\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"url\" : null\n" +
-                                "        }")));
+        stubFor(post(urlEqualTo(archivePath)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"createdAt\" : 1395183243556,\n" + "          \"duration\" : 0,\n"
+                        + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"name\" : \"\",\n" + "          \"resolution\" : \"1280x720\",\n"
+                        + "          \"partnerId\" : 123456,\n" + "          \"reason\" : \"\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"size\" : 0,\n"
+                        + "          \"status\" : \"started\",\n" + "          \"url\" : null\n" + "        }")));
         Archive archive = sdk.startArchive(sessionId, properties);
         assertNotNull(archive);
         assertEquals(sessionId, archive.getSessionId());
-        assertEquals(archive.getResolution(),"1280x720");
+        assertEquals(archive.getResolution(), "1280x720");
         verify(postRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
     @Test
     public void testStartArchiveWithResolutionInIndividualMode() throws OpenTokException {
         String sessionId = "SESSIONID";
-        ArchiveProperties properties = new ArchiveProperties.Builder().outputMode(OutputMode.INDIVIDUAL).resolution("1280x720").build();
+        ArchiveProperties properties = new ArchiveProperties.Builder().outputMode(OutputMode.INDIVIDUAL)
+                .resolution("1280x720").build();
         try {
             sdk.startArchive(sessionId, properties);
         } catch (InvalidArgumentException e) {
-            assertEquals(e.getMessage(),"The resolution cannot be specified for individual output mode.");
+            assertEquals(e.getMessage(), "The resolution cannot be specified for individual output mode.");
         }
     }
 
     @Test
     public void testSetArchiveLayoutVertical() throws OpenTokException {
         String archiveId = "ARCHIVEID";
-        ArchiveProperties properties = new ArchiveProperties.Builder().layout(new ArchiveLayout(ArchiveLayout.Type.VERTICAL)).build();
-        String url =  "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
+        ArchiveProperties properties = new ArchiveProperties.Builder()
+                .layout(new ArchiveLayout(ArchiveLayout.Type.VERTICAL)).build();
+        String url = "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
         stubFor(put(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")));
 
         sdk.setArchiveLayout(archiveId, properties);
         verify(putRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(putRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(putRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testSetArchiveLayoutCustom() throws OpenTokException {
         String archiveId = "ARCHIVEID";
-        ArchiveProperties properties = new ArchiveProperties.Builder().layout(new ArchiveLayout(ArchiveLayout.Type.CUSTOM, "stream { position: absolute; }")).build();
-        String url =  "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
+        ArchiveProperties properties = new ArchiveProperties.Builder()
+                .layout(new ArchiveLayout(ArchiveLayout.Type.CUSTOM, "stream { position: absolute; }")).build();
+        String url = "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
         stubFor(put(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")));
 
         sdk.setArchiveLayout(archiveId, properties);
         verify(putRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(putRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(putRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
 
@@ -1063,102 +906,107 @@ public class OpenTokTest {
     public void testSetArchiveLayoutCustomWithNoStyleSheet() throws OpenTokException {
         boolean exception = false;
         String archiveId = "ARCHIVEID";
-        ArchiveProperties properties = new ArchiveProperties.Builder().layout(new ArchiveLayout(ArchiveLayout.Type.CUSTOM)).build();
-        String url =  "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
+        ArchiveProperties properties = new ArchiveProperties.Builder()
+                .layout(new ArchiveLayout(ArchiveLayout.Type.CUSTOM)).build();
+        String url = "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
         try {
             sdk.setArchiveLayout(archiveId, properties);
         } catch (RequestException e) {
             exception = true;
         }
-        assertTrue (exception);
+        assertTrue(exception);
     }
 
     @Test
     public void testSetArchiveLayoutNonCustomWithStyleSheet() throws OpenTokException {
         boolean exception = false;
         String archiveId = "ARCHIVEID";
-        ArchiveProperties properties = new ArchiveProperties.Builder().layout(new ArchiveLayout(ArchiveLayout.Type.BESTFIT, "stream { position: absolute; }")).build();
-        String url =  "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
+        ArchiveProperties properties = new ArchiveProperties.Builder()
+                .layout(new ArchiveLayout(ArchiveLayout.Type.BESTFIT, "stream { position: absolute; }")).build();
+        String url = "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
         try {
             sdk.setArchiveLayout(archiveId, properties);
         } catch (RequestException e) {
             exception = true;
         }
-        assertTrue (exception);
+        assertTrue(exception);
     }
+
     @Test
     public void testSetArchiveLayoutWithNoProperties() throws OpenTokException {
         boolean exception = false;
         String archiveId = "ARCHIVEID";
-        String url =  "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
+        String url = "/v2/project/" + this.apiKey + "/archive/" + archiveId + "/layout";
         try {
             sdk.setArchiveLayout(archiveId, null);
         } catch (InvalidArgumentException e) {
             exception = true;
         }
-        assertTrue (exception);
+        assertTrue(exception);
     }
+
     @Test
     public void testSetArchiveStreamsLayoutWithNoProps() throws OpenTokException {
         boolean exception = false;
         String sessionId = "SESSIONID";
-        String url =  "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
+        String url = "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
         try {
             sdk.setStreamLayouts(sessionId, null);
         } catch (InvalidArgumentException e) {
             exception = true;
         }
-        assertTrue (exception);
+        assertTrue(exception);
     }
+
     @Test
     public void testSetArchiveStreamsLayoutWithNoSessionID() throws OpenTokException {
         boolean exception = false;
         String sessionId = "";
-        String url =  "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
+        String url = "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
         try {
             sdk.setStreamLayouts(sessionId, new StreamListProperties.Builder().build());
         } catch (InvalidArgumentException e) {
             exception = true;
         }
-        assertTrue (exception);
+        assertTrue(exception);
     }
+
     @Test
     public void testSetArchiveStreamsMultiLayout() throws OpenTokException {
         String sessionId = "SESSIONID";
         String streamId1 = "STREAMID1";
         String streamId2 = "STREAMID2";
-        StreamProperties streamProps1 = new StreamProperties.Builder().id(streamId1).addLayoutClass("full").addLayoutClass("focus").build();
+        StreamProperties streamProps1 = new StreamProperties.Builder().id(streamId1).addLayoutClass("full")
+                .addLayoutClass("focus").build();
         StreamProperties streamProps2 = new StreamProperties.Builder().id(streamId2).addLayoutClass("full").build();
-        StreamListProperties properties = new StreamListProperties.Builder().addStreamProperties(streamProps1).addStreamProperties(streamProps2).build();
-        String url =  "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
+        StreamListProperties properties = new StreamListProperties.Builder().addStreamProperties(streamProps1)
+                .addStreamProperties(streamProps2).build();
+        String url = "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
         stubFor(put(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")));
         sdk.setStreamLayouts(sessionId, properties);
         verify(putRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(putRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(putRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testSetArchiveStreamsOneLayout() throws OpenTokException {
         String sessionId = "SESSIONID";
         String streamId = "STREAMID1";
 
-        StreamProperties streamProps = new StreamProperties.Builder().id(streamId).addLayoutClass("full").addLayoutClass("focus").build();
+        StreamProperties streamProps = new StreamProperties.Builder().id(streamId).addLayoutClass("full")
+                .addLayoutClass("focus").build();
         StreamListProperties properties = new StreamListProperties.Builder().addStreamProperties(streamProps).build();
-        String url =  "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
+        String url = "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
         stubFor(put(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")));
         sdk.setStreamLayouts(sessionId, properties);
         verify(putRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(putRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(putRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testSetArchiveStreamsNoLayout() throws OpenTokException {
         String sessionId = "SESSIONID";
@@ -1166,37 +1014,27 @@ public class OpenTokTest {
 
         StreamProperties streamProps = new StreamProperties.Builder().id(streamId).build();
         StreamListProperties properties = new StreamListProperties.Builder().addStreamProperties(streamProps).build();
-        String url =  "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
+        String url = "/v2/project/" + this.apiKey + "/session/" + sessionId + "/stream";
         stubFor(put(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")));
         sdk.setStreamLayouts(sessionId, properties);
         verify(putRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(putRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(putRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testStartArchiveWithName() throws OpenTokException {
         String sessionId = "SESSIONID";
         String name = "archive_name";
         stubFor(post(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243556,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"name\" : \"archive_name\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"url\" : null\n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"createdAt\" : 1395183243556,\n" + "          \"duration\" : 0,\n"
+                                + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                                + "          \"name\" : \"archive_name\",\n" + "          \"partnerId\" : 123456,\n"
+                                + "          \"reason\" : \"\",\n" + "          \"sessionId\" : \"SESSIONID\",\n"
+                                + "          \"size\" : 0,\n" + "          \"status\" : \"started\",\n"
+                                + "          \"url\" : null\n" + "        }")));
 
         Archive archive = sdk.startArchive(sessionId, name);
         assertNotNull(archive);
@@ -1204,8 +1042,7 @@ public class OpenTokTest {
         assertEquals(name, archive.getName());
         assertNotNull(archive.getId());
         verify(postRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
@@ -1213,100 +1050,66 @@ public class OpenTokTest {
     public void testStartVoiceOnlyArchive() throws OpenTokException {
         String sessionId = "SESSIONID";
         stubFor(post(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243556,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"url\" : null,\n" +
-                                "          \"hasVideo\" : false,\n" +
-                                "          \"hasAudio\" : true\n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"createdAt\" : 1395183243556,\n" + "          \"duration\" : 0,\n"
+                                + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                                + "          \"name\" : \"\",\n" + "          \"partnerId\" : 123456,\n"
+                                + "          \"reason\" : \"\",\n" + "          \"sessionId\" : \"SESSIONID\",\n"
+                                + "          \"size\" : 0,\n" + "          \"status\" : \"started\",\n"
+                                + "          \"url\" : null,\n" + "          \"hasVideo\" : false,\n"
+                                + "          \"hasAudio\" : true\n" + "        }")));
         ArchiveProperties properties = new ArchiveProperties.Builder().hasVideo(false).build();
         Archive archive = sdk.startArchive(sessionId, properties);
         assertNotNull(archive);
         assertEquals(sessionId, archive.getSessionId());
         assertNotNull(archive.getId());
         verify(postRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
     @Test
     public void testStartComposedArchive() throws OpenTokException {
         String sessionId = "SESSIONID";
-        stubFor(post(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243556,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"url\" : null,\n" +
-                                "          \"outputMode\" : \"composed\"\n" +
-                                "        }")));
-        ArchiveProperties properties = new ArchiveProperties.Builder()
-                .outputMode(OutputMode.COMPOSED)
-                .build();
+        stubFor(post(urlEqualTo(archivePath)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"createdAt\" : 1395183243556,\n" + "          \"duration\" : 0,\n"
+                        + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"name\" : \"\",\n" + "          \"partnerId\" : 123456,\n"
+                        + "          \"reason\" : \"\",\n" + "          \"sessionId\" : \"SESSIONID\",\n"
+                        + "          \"size\" : 0,\n" + "          \"status\" : \"started\",\n"
+                        + "          \"url\" : null,\n" + "          \"outputMode\" : \"composed\"\n" + "        }")));
+        ArchiveProperties properties = new ArchiveProperties.Builder().outputMode(OutputMode.COMPOSED).build();
         Archive archive = sdk.startArchive(sessionId, properties);
         assertNotNull(archive);
         assertEquals(sessionId, archive.getSessionId());
         assertNotNull(archive.getId());
         assertEquals(OutputMode.COMPOSED, archive.getOutputMode());
         verify(postRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
     @Test
     public void testStartComposedArchiveWithLayout() throws OpenTokException {
         String sessionId = "SESSIONID";
-        stubFor(post(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243556,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"url\" : null,\n" +
-                                "          \"outputMode\" : \"composed\"\n" +
-                                "        }")));
-        ArchiveProperties properties = new ArchiveProperties.Builder()
-                .outputMode(OutputMode.COMPOSED)
-                .layout(new ArchiveLayout(ArchiveLayout.Type.CUSTOM, "stream { position: absolute; }"))
-                .build();
+        stubFor(post(urlEqualTo(archivePath)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"createdAt\" : 1395183243556,\n" + "          \"duration\" : 0,\n"
+                        + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"name\" : \"\",\n" + "          \"partnerId\" : 123456,\n"
+                        + "          \"reason\" : \"\",\n" + "          \"sessionId\" : \"SESSIONID\",\n"
+                        + "          \"size\" : 0,\n" + "          \"status\" : \"started\",\n"
+                        + "          \"url\" : null,\n" + "          \"outputMode\" : \"composed\"\n" + "        }")));
+        ArchiveProperties properties = new ArchiveProperties.Builder().outputMode(OutputMode.COMPOSED)
+                .layout(new ArchiveLayout(ArchiveLayout.Type.CUSTOM, "stream { position: absolute; }")).build();
         Archive archive = sdk.startArchive(sessionId, properties);
         assertNotNull(archive);
         assertEquals(sessionId, archive.getSessionId());
         assertNotNull(archive.getId());
         assertEquals(OutputMode.COMPOSED, archive.getOutputMode());
         verify(postRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
@@ -1314,22 +1117,14 @@ public class OpenTokTest {
     public void testStartIndividualArchive() throws OpenTokException {
         String sessionId = "SESSIONID";
         stubFor(post(urlEqualTo(archivePath))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243556,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"url\" : null,\n" +
-                                "          \"outputMode\" : \"individual\"\n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"createdAt\" : 1395183243556,\n" + "          \"duration\" : 0,\n"
+                                + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                                + "          \"name\" : \"\",\n" + "          \"partnerId\" : 123456,\n"
+                                + "          \"reason\" : \"\",\n" + "          \"sessionId\" : \"SESSIONID\",\n"
+                                + "          \"size\" : 0,\n" + "          \"status\" : \"started\",\n"
+                                + "          \"url\" : null,\n" + "          \"outputMode\" : \"individual\"\n"
+                                + "        }")));
         ArchiveProperties properties = new ArchiveProperties.Builder().outputMode(OutputMode.INDIVIDUAL).build();
         Archive archive = sdk.startArchive(sessionId, properties);
         assertNotNull(archive);
@@ -1337,8 +1132,7 @@ public class OpenTokTest {
         assertNotNull(archive.getId());
         assertEquals(OutputMode.INDIVIDUAL, archive.getOutputMode());
         verify(postRequestedFor(urlMatching(archivePath)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(archivePath)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(archivePath)))));
         Helpers.verifyUserAgent();
     }
 
@@ -1349,22 +1143,13 @@ public class OpenTokTest {
     @Test
     public void testStopArchive() throws OpenTokException {
         String archiveId = "ARCHIVEID";
-        stubFor(post(urlEqualTo(archivePath + "/" + archiveId + "/stop"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395183243000,\n" +
-                                "          \"duration\" : 0,\n" +
-                                "          \"id\" : \"ARCHIVEID\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 0,\n" +
-                                "          \"status\" : \"stopped\",\n" +
-                                "          \"url\" : null\n" +
-                                "        }")));
+        stubFor(post(urlEqualTo(archivePath + "/" + archiveId + "/stop")).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"createdAt\" : 1395183243000,\n" + "          \"duration\" : 0,\n"
+                        + "          \"id\" : \"ARCHIVEID\",\n" + "          \"name\" : \"\",\n"
+                        + "          \"partnerId\" : 123456,\n" + "          \"reason\" : \"\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"size\" : 0,\n"
+                        + "          \"status\" : \"stopped\",\n" + "          \"url\" : null\n" + "        }")));
 
         Archive archive = sdk.stopArchive(archiveId);
         assertNotNull(archive);
@@ -1382,9 +1167,7 @@ public class OpenTokTest {
     public void testDeleteArchive() throws OpenTokException {
         String archiveId = "ARCHIVEID";
         stubFor(delete(urlEqualTo(archivePath + "/" + archiveId))
-                .willReturn(aResponse()
-                        .withStatus(204)
-                        .withHeader("Content-Type", "application/json")));
+                .willReturn(aResponse().withStatus(204).withHeader("Content-Type", "application/json")));
 
         sdk.deleteArchive(archiveId);
         verify(deleteRequestedFor(urlMatching(archivePath + "/" + archiveId)));
@@ -1396,24 +1179,16 @@ public class OpenTokTest {
     // TODO: test delete archive failure scenarios
 
     // NOTE: this test is pretty sloppy
-    @Test public void testGetExpiredArchive() throws OpenTokException {
+    @Test
+    public void testGetExpiredArchive() throws OpenTokException {
         String archiveId = "ARCHIVEID";
-        stubFor(get(urlEqualTo(archivePath + "/" + archiveId))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395187836000,\n" +
-                                "          \"duration\" : 62,\n" +
-                                "          \"id\" : \"" + archiveId + "\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 8347554,\n" +
-                                "          \"status\" : \"expired\",\n" +
-                                "          \"url\" : null\n" +
-                                "        }")));
+        stubFor(get(urlEqualTo(archivePath + "/" + archiveId)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"createdAt\" : 1395187836000,\n" + "          \"duration\" : 62,\n"
+                        + "          \"id\" : \"" + archiveId + "\",\n" + "          \"name\" : \"\",\n"
+                        + "          \"partnerId\" : 123456,\n" + "          \"reason\" : \"\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"size\" : 8347554,\n"
+                        + "          \"status\" : \"expired\",\n" + "          \"url\" : null\n" + "        }")));
 
         Archive archive = sdk.getArchive(archiveId);
         assertNotNull(archive);
@@ -1421,68 +1196,48 @@ public class OpenTokTest {
     }
 
     // NOTE: this test is pretty sloppy
-    @Test public void testGetPausedArchive() throws OpenTokException {
+    @Test
+    public void testGetPausedArchive() throws OpenTokException {
         String archiveId = "ARCHIVEID";
-        stubFor(get(urlEqualTo(archivePath + "/" + archiveId))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395187836000,\n" +
-                                "          \"duration\" : 62,\n" +
-                                "          \"id\" : \"" + archiveId + "\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 8347554,\n" +
-                                "          \"status\" : \"paused\",\n" +
-                                "          \"url\" : null\n" +
-                                "        }")));
+        stubFor(get(urlEqualTo(archivePath + "/" + archiveId)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"createdAt\" : 1395187836000,\n" + "          \"duration\" : 62,\n"
+                        + "          \"id\" : \"" + archiveId + "\",\n" + "          \"name\" : \"\",\n"
+                        + "          \"partnerId\" : 123456,\n" + "          \"reason\" : \"\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"size\" : 8347554,\n"
+                        + "          \"status\" : \"paused\",\n" + "          \"url\" : null\n" + "        }")));
 
         Archive archive = sdk.getArchive(archiveId);
         assertNotNull(archive);
         assertEquals(Archive.Status.PAUSED, archive.getStatus());
     }
 
-    @Test public void testGetArchiveWithUnknownProperties() throws OpenTokException {
+    @Test
+    public void testGetArchiveWithUnknownProperties() throws OpenTokException {
         String archiveId = "ARCHIVEID";
-        stubFor(get(urlEqualTo(archivePath + "/" + archiveId))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"createdAt\" : 1395187836000,\n" +
-                                "          \"duration\" : 62,\n" +
-                                "          \"id\" : \"" + archiveId + "\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"partnerId\" : 123456,\n" +
-                                "          \"reason\" : \"\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"size\" : 8347554,\n" +
-                                "          \"status\" : \"expired\",\n" +
-                                "          \"url\" : null,\n" +
-                                "          \"thisisnotaproperty\" : null\n" +
-                                "        }")));
+        stubFor(get(urlEqualTo(archivePath + "/" + archiveId)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"createdAt\" : 1395187836000,\n" + "          \"duration\" : 62,\n"
+                        + "          \"id\" : \"" + archiveId + "\",\n" + "          \"name\" : \"\",\n"
+                        + "          \"partnerId\" : 123456,\n" + "          \"reason\" : \"\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"size\" : 8347554,\n"
+                        + "          \"status\" : \"expired\",\n" + "          \"url\" : null,\n"
+                        + "          \"thisisnotaproperty\" : null\n" + "        }")));
 
         Archive archive = sdk.getArchive(archiveId);
         assertNotNull(archive);
     }
+
     @Test
     public void testGetStreamWithId() throws OpenTokException {
         String sessionID = "SESSIONID";
         String streamID = "STREAMID";
         String url = "/v2/project/" + this.apiKey + "/session/" + sessionID + "/stream/" + streamID;
         stubFor(get(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"id\" : \"" + streamID + "\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"videoType\" : \"camera\",\n" +
-                                "          \"layoutClassList\" : [] \n" +
-                                "        }")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")
+                        .withBody("{\n" + "          \"id\" : \"" + streamID + "\",\n" + "          \"name\" : \"\",\n"
+                                + "          \"videoType\" : \"camera\",\n" + "          \"layoutClassList\" : [] \n"
+                                + "        }")));
         Stream stream = sdk.getStream(sessionID, streamID);
         assertNotNull(stream);
         assertEquals(streamID, stream.getId());
@@ -1490,36 +1245,24 @@ public class OpenTokTest {
         assertEquals("camera", stream.getVideoType());
 
         verify(getRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(getRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(getRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
-    
+
     @Test
     public void testListStreams() throws OpenTokException {
         String sessionID = "SESSIONID";
         String url = "/v2/project/" + this.apiKey + "/session/" + sessionID + "/stream";
-        stubFor(get(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"count\" : 2,\n" +
-                                "          \"items\" : [ {\n" +
-                                "          \"id\" : \"" + 1234 + "\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"videoType\" : \"camera\",\n" +
-                                "          \"layoutClassList\" : [] \n" +
-                                "          }, {\n" +
-                                "          \"id\" : \"" + 5678 + "\",\n" +
-                                "          \"name\" : \"\",\n" +
-                                "          \"videoType\" : \"screen\",\n" +
-                                "          \"layoutClassList\" : [] \n" +
-                                "          } ]\n" +
-                                "        }")));
+        stubFor(get(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"count\" : 2,\n" + "          \"items\" : [ {\n" + "          \"id\" : \""
+                        + 1234 + "\",\n" + "          \"name\" : \"\",\n" + "          \"videoType\" : \"camera\",\n"
+                        + "          \"layoutClassList\" : [] \n" + "          }, {\n" + "          \"id\" : \"" + 5678
+                        + "\",\n" + "          \"name\" : \"\",\n" + "          \"videoType\" : \"screen\",\n"
+                        + "          \"layoutClassList\" : [] \n" + "          } ]\n" + "        }")));
         StreamList streams = sdk.listStreams(sessionID);
         assertNotNull(streams);
-        assertEquals(2,streams.getTotalCount());
+        assertEquals(2, streams.getTotalCount());
         Stream stream1 = streams.get(0);
         Stream stream2 = streams.get(1);
         assertEquals("1234", stream1.getId());
@@ -1530,81 +1273,63 @@ public class OpenTokTest {
         assertEquals("screen", stream2.getVideoType());
 
         verify(getRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(getRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(getRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testStartBroadcastNullEmptyParameters() throws OpenTokException {
         int exceptionCount = 0;
         BroadcastProperties properties = new BroadcastProperties.Builder().build();
         try {
             Broadcast broadcast = sdk.startBroadcast("", properties);
-        } catch (InvalidArgumentException e ) {
+        } catch (InvalidArgumentException e) {
             exceptionCount += 1;
         }
         try {
             Broadcast broadcast = sdk.startBroadcast(null, properties);
-        } catch (InvalidArgumentException e ) {
+        } catch (InvalidArgumentException e) {
             exceptionCount += 1;
         }
         try {
             Broadcast broadcast = sdk.startBroadcast("SESSIONID", null);
-        } catch (InvalidArgumentException e ) {
+        } catch (InvalidArgumentException e) {
             exceptionCount += 1;
         }
         assertTrue(exceptionCount == 3);
     }
-    
+
     @Test
     public void testStartBroadcast() throws OpenTokException {
         String sessionId = "SESSIONID";
         String url = "/v2/project/" + this.apiKey + "/broadcast";
-        stubFor(post(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"projectId\" : 123456,\n" +
-                                "          \"createdAt\" : 1437676551000,\n" +
-                                "          \"upDatedAt\" : 1437676551000,\n" +
-                                "          \"resolution\" : \"1280x720\",\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"broadcastUrls\" : {"    +
-                                "           \"hls\" : \"http://server/fakepath/playlist.m3u8\","     +
-                                "           \"rtmp\" : [{"           +
-                                "           \"id\" : \"foo\","           +
-                                "           \"serverUrl\" : \"rtmp://myfooserver/myfooapp\","     +
-                                "           \"streamName\" : \"myfoostream\""     +
-                                "           },"                                   +
-                                "           {                          "           +
-                                "           \"id\" : \"bar\","     +
-                                "           \"serverUrl\" : \"rtmp://mybarserver/mybarapp\","     +
-                                "           \"streamName\" : \"mybarstream\""     +
-                                "           }]"                                   +
-                                "           }"                                   +
-                                "           }"                                   +
-                                "        }")));
-        RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp").streamName("myfoostream").build();
-        RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar").serverUrl("rtmp://mybarserver/mybarapp").streamName("mybarstream").build();
+        stubFor(post(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"projectId\" : 123456,\n"
+                        + "          \"createdAt\" : 1437676551000,\n" + "          \"upDatedAt\" : 1437676551000,\n"
+                        + "          \"resolution\" : \"1280x720\",\n" + "          \"status\" : \"started\",\n"
+                        + "          \"broadcastUrls\" : {"
+                        + "           \"hls\" : \"http://server/fakepath/playlist.m3u8\"," + "           \"rtmp\" : [{"
+                        + "           \"id\" : \"foo\"," + "           \"serverUrl\" : \"rtmp://myfooserver/myfooapp\","
+                        + "           \"streamName\" : \"myfoostream\"" + "           },"
+                        + "           {                          " + "           \"id\" : \"bar\","
+                        + "           \"serverUrl\" : \"rtmp://mybarserver/mybarapp\","
+                        + "           \"streamName\" : \"mybarstream\"" + "           }]" + "           }"
+                        + "           }" + "        }")));
+        RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp")
+                .streamName("myfoostream").build();
+        RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar").serverUrl("rtmp://mybarserver/mybarapp")
+                .streamName("mybarstream").build();
         BroadcastLayout layout = new BroadcastLayout(BroadcastLayout.Type.PIP);
-        BroadcastProperties properties = new BroadcastProperties.Builder()
-                .hasHls(true)
-                .addRtmpProperties(rtmpProps)
-                .addRtmpProperties(rtmpNextProps)
-                .maxDuration(1000)
-                .resolution("640x480")
-                .layout(layout)
-                .build();
+        BroadcastProperties properties = new BroadcastProperties.Builder().hasHls(true).addRtmpProperties(rtmpProps)
+                .addRtmpProperties(rtmpNextProps).maxDuration(1000).resolution("640x480").layout(layout).build();
         Broadcast broadcast = sdk.startBroadcast(sessionId, properties);
         assertNotNull(broadcast);
         assertEquals(sessionId, broadcast.getSessionId());
         assertNotNull(broadcast.getId());
         verify(postRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
 
@@ -1612,7 +1337,7 @@ public class OpenTokTest {
     public void testStartBroadcastWithCustomLayout() throws OpenTokException {
         String sessionId = "2_M23039383dlkeoedjd-22928edjdHKUiuhkfofoieo98899imf-fg";
         String url = "/v2/project/" + this.apiKey + "/broadcast";
-        
+
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode broadcastRootNode = mapper.createObjectNode();
         broadcastRootNode.put("id", "35c4596f-f92a-465b-b319-828d3de87b949");
@@ -1630,166 +1355,124 @@ public class OpenTokTest {
         broadcastRootNode.put("resolution", "1280x720");
         broadcastRootNode.put("partnerId", "12345678");
         broadcastRootNode.put("event", "broadcast");
-        
 
-        stubFor(post(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(broadcastRootNode.toString())));
-        
+        stubFor(post(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json").withBody(broadcastRootNode.toString())));
+
         BroadcastLayout layout = new BroadcastLayout(BroadcastLayout.Type.CUSTOM);
         String customStylesheet = "stream.instructor {position: absolute; width: 100%;  height:50%;}";
         layout.setStylesheet(customStylesheet);
 
-        BroadcastProperties properties = new BroadcastProperties.Builder()
-                .hasHls(true)
-                .maxDuration(5400)
-                .layout(layout)
+        BroadcastProperties properties = new BroadcastProperties.Builder().hasHls(true).maxDuration(5400).layout(layout)
                 .build();
         Broadcast broadcast = sdk.startBroadcast(sessionId, properties);
         assertNotNull(broadcast);
         assertEquals(sessionId, broadcast.getSessionId());
         assertNotNull(broadcast.getId());
         verify(postRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
-    
+
     @Test
     public void testStartBroadcastNoHls() throws OpenTokException {
         String sessionId = "SESSIONID";
         String url = "/v2/project/" + this.apiKey + "/broadcast";
-        stubFor(post(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"projectId\" : 123456,\n" +
-                                "          \"createdAt\" : 1437676551000,\n" +
-                                "          \"upDatedAt\" : 1437676551000,\n" +
-                                "          \"resolution\" : \"1280x720\",\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"broadcastUrls\" : {"    +
-                                "           \"rtmp\" : [{"           +
-                                "           \"id\" : \"foo\","           +
-                                "           \"serverUrl\" : \"rtmp://myfooserver/myfooapp\","     +
-                                "           \"streamName\" : \"myfoostream\""     +
-                                "           },"                                   +
-                                "           {                          "           +
-                                "           \"id\" : \"bar\","     +
-                                "           \"serverUrl\" : \"rtmp://mybarserver/mybarapp\","     +
-                                "           \"streamName\" : \"mybarstream\""     +
-                                "           }]"                                   +
-                                "           }"                                   +
-                                "        }")));
-        RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp").streamName("myfoostream").build();
-        RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar").serverUrl("rtmp://mybarserver/mybarapp").streamName("mybarstream").build();
+        stubFor(post(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"projectId\" : 123456,\n"
+                        + "          \"createdAt\" : 1437676551000,\n" + "          \"upDatedAt\" : 1437676551000,\n"
+                        + "          \"resolution\" : \"1280x720\",\n" + "          \"status\" : \"started\",\n"
+                        + "          \"broadcastUrls\" : {" + "           \"rtmp\" : [{"
+                        + "           \"id\" : \"foo\"," + "           \"serverUrl\" : \"rtmp://myfooserver/myfooapp\","
+                        + "           \"streamName\" : \"myfoostream\"" + "           },"
+                        + "           {                          " + "           \"id\" : \"bar\","
+                        + "           \"serverUrl\" : \"rtmp://mybarserver/mybarapp\","
+                        + "           \"streamName\" : \"mybarstream\"" + "           }]" + "           }"
+                        + "        }")));
+        RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp")
+                .streamName("myfoostream").build();
+        RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar").serverUrl("rtmp://mybarserver/mybarapp")
+                .streamName("mybarstream").build();
         BroadcastLayout layout = new BroadcastLayout(BroadcastLayout.Type.PIP);
-        BroadcastProperties properties = new BroadcastProperties.Builder()
-                .addRtmpProperties(rtmpProps)
-                .addRtmpProperties(rtmpNextProps)
-                .maxDuration(1000)
-                .resolution("640x480")
-                .layout(layout)
-                .build();
+        BroadcastProperties properties = new BroadcastProperties.Builder().addRtmpProperties(rtmpProps)
+                .addRtmpProperties(rtmpNextProps).maxDuration(1000).resolution("640x480").layout(layout).build();
         Broadcast broadcast = sdk.startBroadcast(sessionId, properties);
         assertNotNull(broadcast);
         assertEquals(sessionId, broadcast.getSessionId());
         assertNotNull(broadcast.getId());
         assertNull(broadcast.getHls());
         verify(postRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testStartBroadcastNoRtmp() throws OpenTokException {
         String sessionId = "SESSIONID";
         String url = "/v2/project/" + this.apiKey + "/broadcast";
-        stubFor(post(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"projectId\" : 123456,\n" +
-                                "          \"createdAt\" : 1437676551000,\n" +
-                                "          \"upDatedAt\" : 1437676551000,\n" +
-                                "          \"resolution\" : \"1280x720\",\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"broadcastUrls\" : {"    +
-                                "           \"hls\" : \"http://server/fakepath/playlist.m3u8\""     +
-                                "           }"                                   +
-                                "        }")));
-        RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp").streamName("myfoostream").build();
-        RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar").serverUrl("rtmp://mybarserver/mybarapp").streamName("mybarstream").build();
+        stubFor(post(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"projectId\" : 123456,\n"
+                        + "          \"createdAt\" : 1437676551000,\n" + "          \"upDatedAt\" : 1437676551000,\n"
+                        + "          \"resolution\" : \"1280x720\",\n" + "          \"status\" : \"started\",\n"
+                        + "          \"broadcastUrls\" : {"
+                        + "           \"hls\" : \"http://server/fakepath/playlist.m3u8\"" + "           }"
+                        + "        }")));
+        RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp")
+                .streamName("myfoostream").build();
+        RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar").serverUrl("rtmp://mybarserver/mybarapp")
+                .streamName("mybarstream").build();
         BroadcastLayout layout = new BroadcastLayout(BroadcastLayout.Type.PIP);
-        BroadcastProperties properties = new BroadcastProperties.Builder()
-                .addRtmpProperties(rtmpProps)
-                .addRtmpProperties(rtmpNextProps)
-                .maxDuration(1000)
-                .resolution("640x480")
-                .layout(layout)
-                .build();
+        BroadcastProperties properties = new BroadcastProperties.Builder().addRtmpProperties(rtmpProps)
+                .addRtmpProperties(rtmpNextProps).maxDuration(1000).resolution("640x480").layout(layout).build();
         Broadcast broadcast = sdk.startBroadcast(sessionId, properties);
         assertNotNull(broadcast);
         assertEquals(sessionId, broadcast.getSessionId());
         assertNotNull(broadcast.getId());
         assertTrue(broadcast.getRtmpList().isEmpty());
         verify(postRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testBroadcastPropertiesWithSixRtmp() throws OpenTokException {
         String sessionId = "SESSIONID";
         String url = "/v2/project/" + this.apiKey + "/broadcast";
         boolean caughtException = false;
         try {
-            RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp").streamName("myfoostream").build();
-            RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar").serverUrl("rtmp://mybarserver/mybarapp").streamName("mybarstream").build();
-            new BroadcastProperties.Builder()
-                    .addRtmpProperties(rtmpProps)
-                    .addRtmpProperties(rtmpNextProps)
-                    .addRtmpProperties(rtmpProps)
-                    .addRtmpProperties(rtmpNextProps)
-                    .addRtmpProperties(rtmpProps)
-                    .addRtmpProperties(rtmpNextProps)
-                    .build();
+            RtmpProperties rtmpProps = new RtmpProperties.Builder().id("foo").serverUrl("rtmp://myfooserver/myfooapp")
+                    .streamName("myfoostream").build();
+            RtmpProperties rtmpNextProps = new RtmpProperties.Builder().id("bar")
+                    .serverUrl("rtmp://mybarserver/mybarapp").streamName("mybarstream").build();
+            new BroadcastProperties.Builder().addRtmpProperties(rtmpProps).addRtmpProperties(rtmpNextProps)
+                    .addRtmpProperties(rtmpProps).addRtmpProperties(rtmpNextProps).addRtmpProperties(rtmpProps)
+                    .addRtmpProperties(rtmpNextProps).build();
         } catch (InvalidArgumentException e) {
             caughtException = true;
         }
         assertTrue(caughtException);
     }
+
     @Test
     public void testStopBroadcast() throws OpenTokException {
         String broadcastId = "BROADCASTID";
         String url = "/v2/project/" + this.apiKey + "/broadcast/" + broadcastId + "/stop";
-        stubFor(post(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"id\" :  \"" + broadcastId + "\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"projectId\" : 123456,\n" +
-                                "          \"createdAt\" : 1437676551000,\n" +
-                                "          \"updatedAt\" : 1437676551000,\n" +
-                                "          \"resolution\" : \"1280x720\",\n" +
-                                "          \"broadcastUrls\" : null"    +
-                                "        }")));
+        stubFor(post(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"id\" :  \"" + broadcastId + "\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"projectId\" : 123456,\n"
+                        + "          \"createdAt\" : 1437676551000,\n" + "          \"updatedAt\" : 1437676551000,\n"
+                        + "          \"resolution\" : \"1280x720\",\n" + "          \"broadcastUrls\" : null"
+                        + "        }")));
         Broadcast broadcast = sdk.stopBroadcast(broadcastId);
         assertNotNull(broadcast);
         assertEquals(broadcastId, broadcast.getId());
         verify(postRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
 
@@ -1797,72 +1480,54 @@ public class OpenTokTest {
     public void testBroadcastStreamInfo() throws OpenTokException {
         String broadcastId = "BROADCASTID";
         String url = "/v2/project/" + this.apiKey + "/broadcast/" + broadcastId;
-        stubFor(get(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"id\" :  \"" + broadcastId + "\",\n" +
-                                "          \"sessionId\" : \"SESSIONID\",\n" +
-                                "          \"projectId\" : 123456,\n" +
-                                "          \"createdAt\" : 1437676551000,\n" +
-                                "          \"upDatedAt\" : 1437676551000,\n" +
-                                "          \"resolution\" : \"1280x720\",\n" +
-                                "          \"status\" : \"started\",\n" +
-                                "          \"broadcastUrls\" : {"    +
-                                "           \"hls\" : \"http://server/fakepath/playlist.m3u8\","     +
-                                "           \"rtmp\" : [{"           +
-                                "           \"id\" : \"foo\","           +
-                                "           \"serverUrl\" : \"rtmp://myfooserver/myfooapp\","     +
-                                "           \"streamName\" : \"myfoostream\""     +
-                                "           },"                                   +
-                                "           {                          "           +
-                                "           \"id\" : \"bar\","     +
-                                "           \"serverUrl\" : \"rtmp://mybarserver/mybarapp\","     +
-                                "           \"streamName\" : \"mybarstream\""     +
-                                "           }]"                                   +
-                                "           }"                                   +
-                                "           }"                                   +
-                                "        }")));
+        stubFor(get(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"id\" :  \"" + broadcastId + "\",\n"
+                        + "          \"sessionId\" : \"SESSIONID\",\n" + "          \"projectId\" : 123456,\n"
+                        + "          \"createdAt\" : 1437676551000,\n" + "          \"upDatedAt\" : 1437676551000,\n"
+                        + "          \"resolution\" : \"1280x720\",\n" + "          \"status\" : \"started\",\n"
+                        + "          \"broadcastUrls\" : {"
+                        + "           \"hls\" : \"http://server/fakepath/playlist.m3u8\"," + "           \"rtmp\" : [{"
+                        + "           \"id\" : \"foo\"," + "           \"serverUrl\" : \"rtmp://myfooserver/myfooapp\","
+                        + "           \"streamName\" : \"myfoostream\"" + "           },"
+                        + "           {                          " + "           \"id\" : \"bar\","
+                        + "           \"serverUrl\" : \"rtmp://mybarserver/mybarapp\","
+                        + "           \"streamName\" : \"mybarstream\"" + "           }]" + "           }"
+                        + "           }" + "        }")));
         Broadcast broadcast = sdk.getBroadcast(broadcastId);
         assertNotNull(broadcast);
         assertEquals(broadcastId, broadcast.getId());
-        assertEquals("http://server/fakepath/playlist.m3u8",broadcast.getHls());
-        assertEquals(2,broadcast.getRtmpList().size());
+        assertEquals("http://server/fakepath/playlist.m3u8", broadcast.getHls());
+        assertEquals(2, broadcast.getRtmpList().size());
         verify(getRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
 
     @Test
     public void testSetBroadcastLayoutVertical() throws OpenTokException {
         String broadcastId = "BROADCASTID";
-        BroadcastProperties properties = new BroadcastProperties.Builder().layout(new BroadcastLayout(BroadcastLayout.Type.VERTICAL)).build();
-        String url =  "/v2/project/" + this.apiKey + "/broadcast/" + broadcastId + "/layout";
+        BroadcastProperties properties = new BroadcastProperties.Builder()
+                .layout(new BroadcastLayout(BroadcastLayout.Type.VERTICAL)).build();
+        String url = "/v2/project/" + this.apiKey + "/broadcast/" + broadcastId + "/layout";
         stubFor(put(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")));
+                .willReturn(aResponse().withStatus(200).withHeader("Content-Type", "application/json")));
 
         sdk.setBroadcastLayout(broadcastId, properties);
         verify(putRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(putRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(putRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testSipDialWithEmptyNullParams() throws OpenTokException {
         int exceptionCaughtCount = 0;
-        SipProperties properties = new SipProperties.Builder()
-                .sipUri("sip:user@sip.partner.com;transport=tls")
-                .userName("username")
-                .password("password")
-                .build();
+        SipProperties properties = new SipProperties.Builder().sipUri("sip:user@sip.partner.com;transport=tls")
+                .userName("username").password("password").build();
         try {
             Sip sip = sdk.dial("", "TOKEN", properties);
         } catch (InvalidArgumentException e) {
-               exceptionCaughtCount += 1;
+            exceptionCaughtCount += 1;
         }
         try {
             Sip sip = sdk.dial(null, "TOKEN", properties);
@@ -1884,10 +1549,7 @@ public class OpenTokTest {
         } catch (InvalidArgumentException e) {
             exceptionCaughtCount += 1;
         }
-        properties = new SipProperties.Builder()
-                .userName("username")
-                .password("password")
-                .build();
+        properties = new SipProperties.Builder().userName("username").password("password").build();
         try {
             Sip sip = sdk.dial("SESSIONID", "TOKEN", properties);
         } catch (InvalidArgumentException e) {
@@ -1895,53 +1557,93 @@ public class OpenTokTest {
         }
         assertTrue(exceptionCaughtCount == 6);
     }
+
     @Test
     public void testSipDial() throws OpenTokException {
         String sessionId = "SESSIONID";
         String token = "TOKEN";
         String url = "/v2/project/" + this.apiKey + "/dial";
-        stubFor(post(urlEqualTo(url))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\n" +
-                                "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"connectionId\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n" +
-                                "          \"streamId\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\"\n" +
-                                "        }")));
+        stubFor(post(urlEqualTo(url)).willReturn(aResponse().withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\n" + "          \"id\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"connectionId\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\",\n"
+                        + "          \"streamId\" : \"30b3ebf1-ba36-4f5b-8def-6f70d9986fe9\"\n" + "        }")));
         Character dQuote = '"';
         String headerKey = dQuote + "X-someKey" + dQuote;
         String headerValue = dQuote + "someValue" + dQuote;
         String headerJson = "{" + headerKey + ": " + headerValue + "}";
-        SipProperties properties = new SipProperties.Builder()
-                                                    .sipUri("sip:user@sip.partner.com;transport=tls")
-                                                    .from("from@example.com")
-                                                    .headersJsonStartingWithXDash(headerJson)
-                                                    .userName("username")
-                                                    .password("password")
-                                                    .secure(true)
-                                                    .build();
+        SipProperties properties = new SipProperties.Builder().sipUri("sip:user@sip.partner.com;transport=tls")
+                .from("from@example.com").headersJsonStartingWithXDash(headerJson).userName("username")
+                .password("password").secure(true).build();
         Sip sip = sdk.dial(sessionId, token, properties);
         assertNotNull(sip);
         assertNotNull(sip.getId());
         assertNotNull(sip.getConnectionId());
         assertNotNull(sip.getStreamId());
         verify(postRequestedFor(urlMatching(url)));
-        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
-                findAll(postRequestedFor(urlMatching(url)))));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(postRequestedFor(urlMatching(url)))));
         Helpers.verifyUserAgent();
     }
+
     @Test
     public void testforceDisconnect() throws OpenTokException {
         String sessionId = "SESSIONID";
         String connectionId = "CONNECTIONID";
-        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId ;
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/connection/" + connectionId;
         stubFor(delete(urlEqualTo(path))
+                .willReturn(aResponse().withStatus(204).withHeader("Content-Type", "application/json")));
+        sdk.forceDisconnect(sessionId, connectionId);
+        verify(deleteRequestedFor(urlMatching(path)));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret, findAll(deleteRequestedFor(urlMatching(path)))));
+        Helpers.verifyUserAgent();
+    }
+
+    // Force Mute tests are commented out because convention here is to test with
+    // server
+    // TODO: recheck tests after end point is added
+
+    @Test
+    public void testforceMute() throws OpenTokException, IOException {
+        String sessionId = "SESSIONID";
+        String streamId = "STREAMID";
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/stream/" + streamId +"/mute" ;
+        stubFor(post(urlEqualTo(path))
                 .willReturn(aResponse()
                         .withStatus(204)
                         .withHeader("Content-Type", "application/json")));
-        sdk.forceDisconnect(sessionId,connectionId);
-        verify(deleteRequestedFor(urlMatching(path)));
+        sdk.forceMute(sessionId,streamId);
+        verify(postRequestedFor(urlMatching(path)));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
+                findAll(deleteRequestedFor(urlMatching(path)))));
+        Helpers.verifyUserAgent();
+    }
+
+    @Test
+    public void testforceMuteAll() throws OpenTokException, IOException {
+        String sessionId = "SESSIONID";
+        String[] excludedStreamIds = {"sdfs","sdfds"};
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/mute" ;
+        stubFor(post(urlEqualTo(path))
+                .willReturn(aResponse()
+                        .withStatus(204)
+                        .withHeader("Content-Type", "application/json")));
+        sdk.forceMuteAll(sessionId,excludedStreamIds);
+        verify(postRequestedFor(urlMatching(path)));
+        assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
+                findAll(deleteRequestedFor(urlMatching(path)))));
+        Helpers.verifyUserAgent();
+    }
+
+    @Test
+    public void testforceMuteAllNoExcluded() throws OpenTokException, IOException {
+        String sessionId = "SESSIONID";
+        String path = "/v2/project/" + apiKey + "/session/" + sessionId + "/mute" ;
+        stubFor(post(urlEqualTo(path))
+                .willReturn(aResponse()
+                        .withStatus(204)
+                        .withHeader("Content-Type", "application/json")));
+        sdk.forceMuteAll(sessionId);
+        verify(postRequestedFor(urlMatching(path)));
         assertTrue(Helpers.verifyTokenAuth(apiKey, apiSecret,
                 findAll(deleteRequestedFor(urlMatching(path)))));
         Helpers.verifyUserAgent();

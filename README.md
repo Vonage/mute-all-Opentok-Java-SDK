@@ -366,6 +366,45 @@ The `connectionId` parameter is used to specify the connection ID of a client co
 
 For more information on the force disconnect functionality and exception codes, please see the [REST API documentation](https://tokbox.com/developer/rest/#forceDisconnect).
 
+
+### Mute Stream
+
+Your application server can mute a stream from an OpenTok session by calling the `forceMute(sessionId, streamId)`
+method of the `com.opentok.OpenTok` instance.
+
+```java
+opentok.forceMute(sessionId, streamId);
+```
+
+The `streamId` parameter is used to specify the stream ID of a strean in the session.
+
+For more information on the force mute functionality and exception codes, please see the [REST API documentation](https://tokbox.com/developer/rest/#forceMute).
+
+### Mute All Streams
+
+Your application server can mute all streams from an OpenTok session by calling the `forceMuteAll(sessionId)`
+method of the `com.opentok.OpenTok` instance.
+
+```java
+opentok.forceMuteAll(sessionId);
+```
+
+For more information on the force mute all functionality and exception codes, please see the [REST API documentation](https://tokbox.com/developer/rest/#forceMuteAll).
+
+### Mute All ecluding streams
+
+Your application server can mute all streams from an OpenTok session but specified streams by calling the `forceMuteAll(sessionId, excludedStreamIds)`
+method of the `com.opentok.OpenTok` instance.
+
+```java
+String[] excludedStreamIds = {"stream1","stream2"};
+opentok.forceMuteAll(sessionId, excludedStreamIds);
+```
+
+The `excludedStreamIds` parameter is used to specify the stream IDs of a streans to exclude form mute in the session.
+
+For more information on the force mute all functionality and exception codes, please see the [REST API documentation](https://tokbox.com/developer/rest/#forceMuteAll).
+
 ### Signaling
 
 You can send signals to all the connections in a session or to a specific connection:

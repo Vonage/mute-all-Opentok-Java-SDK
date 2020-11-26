@@ -643,6 +643,55 @@ public class OpenTok {
         }
     }
 
+    /**
+     * mutes a client from an OpenTok session
+     * <p>
+     * Use this API to force mute a stream of a session.
+     *
+     * @param sessionId The session ID of the connection
+     * @param streamId  The stream ID to mute
+     * @throws IOException
+     */
+    public void forceMute(String sessionId, String streamId)
+            throws OpenTokException, InvalidArgumentException, RequestException, IOException {
+        if (sessionId == null || sessionId.isEmpty() || streamId == null || streamId.isEmpty()) {
+            throw new InvalidArgumentException("Session or Connection string null or empty");
+        }
+        client.forceMute(sessionId, streamId, null);
+    }
+
+    /**
+     * mutes all streams from an OpenTok session
+     * <p>
+     * Use this API to force mute all streams of a session.
+     *
+     * @param sessionId         The session ID of the connection
+     * @param excludedStreamIds The stream IDs to exclude from mute
+     * @throws IOException
+     */
+    public void forceMuteAll(String sessionId, String[] excludedStreamIds)
+            throws OpenTokException, InvalidArgumentException, RequestException, IOException {
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new InvalidArgumentException("Session string null or empty");
+        }
+        client.forceMute(sessionId, null, excludedStreamIds);
+    }
+
+     /**
+      * mutes all streams from an OpenTok session
+      * <p>
+      * Use this API to force mute all streams of a session.
+      *
+      * @param sessionId The session ID of the connection
+      * @throws IOException
+      */
+     public void forceMuteAll(String sessionId)
+             throws OpenTokException, InvalidArgumentException, RequestException, IOException {
+        if (sessionId == null || sessionId.isEmpty()) {
+            throw new InvalidArgumentException("Session string null or empty");
+        }
+        client.forceMute(sessionId, null, null);
+    }
 
     /**
      * Gets an {@link Stream} object for the given sessionId and streamId.

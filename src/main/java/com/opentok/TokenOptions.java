@@ -92,7 +92,7 @@ public class TokenOptions {
          *
          *   <li> <code>MODERATOR</code> &mdash; In addition to the privileges granted to a
          *     publisher, in clients using the OpenTok.js library, a moderator can call the
-         *     <code>forceUnpublish()</code> and <code>forceDisconnect()</code> method of the
+         *     <code>forceMute()</code>,<code>forceMuteAll()</code>,<code>forceUnpublish()</code> and <code>forceDisconnect()</code> method of the
          *     Session object.</li>
          * </ul>
          */
